@@ -1,26 +1,15 @@
 <script lang=ts module>
-    // import {ffmpeg as fuf} from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
-
     import { FFmpeg } from '@ffmpeg/ffmpeg';
 	// @ts-ignore
 	// import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
 	import { fetchFile, toBlobURL } from '@ffmpeg/util';
     import { onMount } from 'svelte';
 
-	let message:string
+	let message
     let transcoded
 
-    // async function loadFFmpeg() {
-	// 	message = 'Loading ffmpeg';
-    //     ffmpegInstance = await ffmpeg.createFFmpeg();
-    //     isFFmpegLoaded = true;
-	// 	message = 'Drop Audio Here'
-    // }
-
-    // loadFFmpeg();
-
     let ffmpeg
-	const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm';
+	const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/umd';
 	async function loadFFmpeg() {
         ffmpeg = new FFmpeg();
 		message = 'Loading ffmpeg-core.js';
@@ -28,12 +17,14 @@
 			message = msg;
 			console.log(message);
 		});
-		await ffmpeg.load({
+        let parts = {
 			coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
 			wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
 			workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
-		});
-		message = 'Drop Audio Here'
+		}
+		message = 'Init ffmpeg-core.js';
+		await ffmpeg.load(parts);
+		message = 'Ready'
 	}
     onMount(() => loadFFmpeg())
 
