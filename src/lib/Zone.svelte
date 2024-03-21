@@ -39,15 +39,16 @@
 
     async function transcode(file) {
         const data = await fetchFile(file);
-        ffmpeg.FS("writeFile", file.name, data);
-        await ffmpeg.run(
+        self.ffmpeg = ffmpeg
+        ffmpeg.writeFile(file.name, data);
+        await ffmpeg.exec([
             "-i",
             file.name,
             "-b:a",
             "40k",
             "output.opus",
-        );
-        transcoded = ffmpeg.FS("readFile", "output.opus");
+        ]);
+        transcoded = ffmpeg.readFile("output.opus");
         return new Blob([transcoded.buffer], { type: "audio/opus" });
     }
 
