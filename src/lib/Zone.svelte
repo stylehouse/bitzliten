@@ -1,32 +1,61 @@
-<script lang=ts module>
-    import { FFmpeg } from '@ffmpeg/ffmpeg';
-	// @ts-ignore
-	// import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
-	import { fetchFile, toBlobURL } from '@ffmpeg/util';
-    import { onMount } from 'svelte';
+<script lang="ts" module>
+    import { FFmpeg } from "@ffmpeg/ffmpeg";
+    // @ts-ignore
+    // import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
+    import { fetchFile } from "@ffmpeg/util";
+    import { onMount } from "svelte";
 
-	let message
-    let transcoded
+    let message;
+    let transcoded;
 
-    let ffmpeg
-	const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/umd';
-	async function loadFFmpeg() {
+    let ffmpeg;
+    const baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/umd";
+    async function loadFFmpeg() {
         ffmpeg = new FFmpeg();
-		message = 'Loading ffmpeg-core.js';
-		ffmpeg.on('log', ({ message: msg }) => {
-			message = msg;
-			console.log(message);
-		});
-        let parts = {
-			coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-			wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-			workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
-		}
-		message = 'Init ffmpeg-core.js';
-		await ffmpeg.load(parts);
-		message = 'Ready'
-	}
-    onMount(() => loadFFmpeg())
+        message = "Loading ffmpeg-core.js";
+        try {
+            ffmpeg.on("log", ({ message: msg }) => {
+                message = msg;
+                console.log(message);
+            });
+
+            let parts = {
+                coreURL: await toBlobURL(
+                    `${baseURL}/ffmpeg-core.js`,
+                    "text/javascript",
+                ),
+                wasmURL: await toBlobURL(
+                    `${baseURL}/ffmpeg-core.wasm`,
+                    "application/wasm",
+                ),
+                workerURL: await toBlobURL(
+                    `${baseURL}/ffmpeg-core.worker.js`,
+                    "text/javascript",
+                ),
+            };
+
+            message = "Init ffmpeg-core.js";
+            await ffmpeg.load(parts);
+            message = "Ready";
+        } catch (err) {
+            message = "Error: " + err;
+            console.error(err);
+        }
+    }
+    async function toBlobURL(url, mimeType) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`);
+            }
+            const blob = await response.arrayBuffer();
+            return URL.createObjectURL(new Blob([blob], { type: mimeType }));
+        } catch (err) {
+            console.error(`Error loading ${url}: ${err.message}`);
+            throw err;
+        }
+    }
+    onMount(() => loadFFmpeg());
 
     async function transcode(file) {
         const data = await fetchFile(file);
