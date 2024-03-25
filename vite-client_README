@@ -1,0 +1,4 @@
+There's problems with ffmpeg.wasm:
+ https://github.com/ffmpegwasm/ffmpeg.wasm/issues/708
+You might workaround "Error: document undefined" by doing:
+ cp vite-client.mjs node_modules/vite/dist/client/client.mjs
