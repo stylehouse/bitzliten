@@ -7,6 +7,7 @@
 
     let message;
     let transcoded;
+	let source_video: HTMLVideoElement;
 
     let ffmpeg;
     const baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm";
@@ -59,6 +60,7 @@
 
     async function transcode(file) {
         const data = await fetchFile(file);
+		source_video.src = URL.createObjectURL(file);
         self.ffmpeg = ffmpeg
         ffmpeg.writeFile(file.name, data);
         await ffmpeg.exec([
@@ -72,9 +74,10 @@
         return new Blob([transcoded.buffer], { type: "audio/opus" });
     }
 
+    let file
     function handleDrop(e) {
         e.preventDefault();
-        let audioFile = e.dataTransfer.files[0];
+        let audioFile = file = e.dataTransfer.files[0];
         transcode(audioFile).then((result) => {
             transcoded = URL.createObjectURL(result);
         });
@@ -101,7 +104,14 @@
                 format.
             </p>
         {:else}
-            <audio controls src={transcoded} />
+            <video controls src={transcoded} />
+        {/if}
+
+
+        {#if file}
+            <p> Original
+                <video bind:this={source_video} controls />
+            </p>
         {/if}
     </div>
 </main>
