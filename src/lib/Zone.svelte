@@ -62,16 +62,23 @@
         const data = await fetchFile(file);
 		source_video.src = URL.createObjectURL(file);
         self.ffmpeg = ffmpeg
-        ffmpeg.writeFile(file.name, data);
+        let ext = 'mkv'
+        let output = 'output.'+ext
+        let input = 'input.avi'; // or file.name
+        await ffmpeg.writeFile(input, data);
         await ffmpeg.exec([
             "-i",
-            file.name,
-            "-b:a",
-            "40k",
-            "output.opus",
+            input,
+
+            "-b:a","40k",
+			"-strict","-2", "-c:a","opus",
+			// "-c:v","copy", // lossless video
+            "-vn", // no video stream
+            // "-c:v","mjpeg", // except for album art (requires .mkv)
+            output,
         ]);
-        transcoded = ffmpeg.readFile("output.opus");
-        return new Blob([transcoded.buffer], { type: "audio/opus" });
+        transcoded = ffmpeg.readFile(output);
+        return new Blob([transcoded.buffer], { type: "audio/"+ext });
     }
 
     let file
@@ -115,3 +122,10 @@
         {/if}
     </div>
 </main>
+<style>
+    p {
+        border: 3px solid sandybrown;
+        border-radius: 3em;
+        padding: 1em;
+    }
+</style>
