@@ -2,7 +2,8 @@
     import { FFmpeg } from "@ffmpeg/ffmpeg";
     // @ts-ignore
     // import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
-    import { fetchFile } from "@ffmpeg/util";
+    // import { fetchFile } from "@ffmpeg/util";
+	import {fetchFile,toBlobURL} from '$lib/not-ffmpeg-util';
     import { onMount } from "svelte";
 
     let message;
@@ -41,19 +42,6 @@
         } catch (err) {
             message = "Error: " + err;
             console.error(err);
-        }
-    }
-    async function toBlobURL(url, mimeType) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}`);
-            }
-            const blob = await response.arrayBuffer();
-            return URL.createObjectURL(new Blob([blob], { type: mimeType }));
-        } catch (err) {
-            console.error(`Error loading ${url}: ${err.message}`);
-            throw err;
         }
     }
     onMount(() => loadFFmpeg());
