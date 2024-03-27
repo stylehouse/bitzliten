@@ -70,6 +70,7 @@
             "-i",
             input,
 
+            "-t","10",
             "-b:a","40k",
 			"-strict","-2", "-c:a","opus",
 			// "-c:v","copy", // lossless video
@@ -77,8 +78,8 @@
             // "-c:v","mjpeg", // except for album art (requires .mkv)
             output,
         ]);
-        transcoded = ffmpeg.readFile(output);
-        return new Blob([transcoded.buffer], { type: "audio/"+ext });
+        let out = ffmpeg.readFile(output);
+        return new Blob([out.buffer], { type: "audio/"+ext });
     }
 
     let file
@@ -112,6 +113,7 @@
             </p>
         {:else}
             <video controls src={transcoded} />
+            <audio controls src={transcoded} />
         {/if}
 
 
