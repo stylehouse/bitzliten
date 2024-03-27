@@ -66,7 +66,7 @@
             // "-c:v","mjpeg", // except for album art (requires .mkv)
             output,
         ]);
-        let out = ffmpeg.readFile(output);
+        let out = await ffmpeg.readFile(output);
         return new Blob([out.buffer], { type: "audio/"+ext });
     }
 
