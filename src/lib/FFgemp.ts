@@ -1,6 +1,6 @@
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
-import { fetchFile, toBlobURL } from '$lib/not-ffmpeg-util';
+import { fetchFile, toBlobURL } from './not-ffmpeg-util';
 
 export async function fetch(url) {
     return await fetchFile(url)
@@ -27,7 +27,7 @@ function modes() {
         },
 
         {
-            t: "lowbitrate", to: "b:a", min: 1, max: 128, s: 40,
+            t: "lowbitrate", to: "b:a", min: 6, max: 128, s: 40,
             cmd: (s) => ["-b:a", s + "k"],
         },
         {
