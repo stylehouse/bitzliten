@@ -46,6 +46,9 @@ export const fetchFile = async (file) => {
             data = await (await fetch(file)).arrayBuffer();
         }
     }
+    else if (data instanceof Uint8Array) {
+        return data
+    }
     else if (file instanceof URL) {
         data = await (await fetch(file)).arrayBuffer();
     }

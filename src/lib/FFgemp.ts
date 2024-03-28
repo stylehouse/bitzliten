@@ -2,24 +2,79 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
 import { fetchFile, toBlobURL } from '$lib/not-ffmpeg-util';
 
+export async function fetch(url) {
+    return await fetchFile(url)
+}
+// A small UI library to do:
+// - wasm init asap or when jobbed
+// - job config schema (what is adjustable) and scrapheap (culture)
+// - returning that typed blob (knowing job)
+// But not do:
+// - drag and drop (is different per framework)
+// - <video>
+
+// inform ui of how to play with things
+function modes() {
+    return [
+        // these are m
+        {
+            t: "seek", to: "ss", min: 1, max: 444, s: 30,
+            cmd: (s) => ["-ss", s],
+        },
+        {
+            t: "length", to: "t", min: 1, max: 128, s: 10,
+            cmd: (s) => ["-t", s],
+        },
+
+        {
+            t: "lowbitrate", to: "b:a", min: 1, max: 128, s: 40,
+            cmd: (s) => ["-b:a", s + "k"],
+        },
+        {
+            t: "opus", to: "c:a",
+            cmd: () => ["-strict", "-2", "-c:a", "opus"],
+        },
+    ]
+}
+
 export class FFgemp {
     private loaded: boolean = false;
     private ffmpeg: any;
     private on_handlers: any = {};
 
     constructor() {
+        // these can be edited in place
+        this.modes = modes()
+    }
+    modes_to_cmds() {
+        // the pile of modes may be a huge knowledge base
+        // dedupe what they apply to
+        let firstto = {}
+        let cmds = []
+        this.modes.map(m => {
+            if (firstto[m.t]) return
+            firstto[m.t] = m
+
+            let val = m.s
+            if (m.cmd) {
+                let re = m.cmd(val)
+                console.log("+ mode "+m.t+": "+(re.join(" ")))
+                cmds.push(...re)
+            }
+        })
+        return cmds.map(s => ''+s)
     }
 
     // log messages
     private m(message: string) {
-        this.on_handle('message',message)
+        this.on_handle('message', message)
         console.log(message);
     }
-    on_handle(name:string,s:any) {
+    on_handle(name: string, s: any) {
         let callback = this.on_handlers[name]
         callback && callback(s)
     }
-    on(name:string,callback:Function) {
+    on(name: string, callback: Function) {
         this.on_handlers[name] = callback
     }
 
@@ -48,27 +103,34 @@ export class FFgemp {
         }
     }
 
+
     async transcode(file: File) {
-        
+
         const data = await fetchFile(file);
-        const input = 'input.avi';
+        const input = 'input.mp3';
         const ext = 'mkv';
         const output = 'output.' + ext;
-    
+
         await this.ffmpeg.writeFile(input, data);
+        
         await this.ffmpeg.exec([
-          "-i", input,
-          "-t", "10",
-          "-b:a", "40k",
-          "-strict", "-2",
-          "-c:a", "opus",
-          // "-c:v","copy", // lossless video
-          "-vn", // no video stream
-          // "-c:v","mjpeg", // except for album art (requires .mkv)
-          output,
+            "-i", input,
+            ...this.modes_to_cmds(),
+            // "-c:v","copy", // lossless video
+            "-vn", // no video stream
+            // "-c:v","mjpeg", // except for album art (requires .mkv)
+            output,
         ]);
-    
+
         const out = await this.ffmpeg.readFile(output);
         return new Blob([out.buffer], { type: "audio/" + ext });
-      }
+    }
+
 }
+
+
+
+function things() {
+    return 1
+}
+
