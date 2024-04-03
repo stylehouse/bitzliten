@@ -13,7 +13,7 @@
     onMount(async () => {
         await FF.init()
         modes = FF.modes
-        file = 'aliomar.mp3'
+        // file = 'aliomar.mp3'
         // letsgo()
     });
 
@@ -26,19 +26,25 @@
         letsgo()
     }
     let pending = $state()
-    let last_config
+    let last_config = $state()
     async function letsgo() {
         // if differently configured
-        let new_config = JSON.toString(modes)
+        let new_config = JSON.stringify(modes)
         if (new_config == last_config) return
         last_config = new_config
 
         // wait for it
+        // if (pending) await FF.abort()
         pending = 1
         let result = await FF.transcode(file)
         transcoded = URL.createObjectURL(result)
         pending = 0
     }
+    function config_maybe_changed() {
+        letsgo()
+    }
+
+
     let playerel = $state()
     let player = $derived(playerel && playerel.v)
     $effect(() => {
@@ -47,8 +53,12 @@
         }
     })
 
+    // all the Knobs call this when adjusted
+    let commit = () => {
+    }
+    
     $effect(() => {
-        if (modes) {
+        if (modes && file) {
             letsgo()
         }
     })
@@ -93,7 +103,9 @@
             {#each modes as m (m.t)}
                 <mode>{m.t}
                 {#if m.max}
-                    <Knob min={m.min} max={m.max} bind:value={m.s} />
+                    <Knob min={m.min} max={m.max} 
+                        bind:value={m.s} 
+                        commit={config_maybe_changed} />
                 {:else if m.s != null}
                     ={m.s}
                 {/if}
@@ -101,6 +113,7 @@
             {/each}
             <mode on:click={letsgo}>AGAIN</mode>
             {#if pending}<mode>PENDING</mode>{/if}
+            <p>cmds: {last_config}</p>
         {/if}
     </div>
 </main>

@@ -18,7 +18,9 @@
 	export let step = 1;
 	//  300px seems good can be done in either direction by a relaxed hand
 	export let space = 300;
-	export let size = "2rem";
+	export let size = "3.4rem";
+	// value via callback
+	export let commit;
 
 	let elem: Element;
 	let elemVal: Element;
@@ -43,6 +45,8 @@
 		unlock()
 		// just clicking on the value takes you to typing in a new one
 		if (!moved) elemVal.select()
+		// release indicates greater commitment to value
+		commit && commit(value)
 	}
 	let locksanity = () => document.pointerLockElement != elem && unlock()
 	let lock = (ev) => {
