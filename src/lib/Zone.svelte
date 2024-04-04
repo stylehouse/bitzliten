@@ -55,10 +55,9 @@
 
 
     let playerel = $state()
-    let player = $derived(playerel && playerel.v)
     $effect(() => {
-        if (player) {
-            player.play()
+        if (playerel) {
+            playerel.play()
         }
     })
 
