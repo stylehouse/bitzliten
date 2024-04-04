@@ -1,7 +1,10 @@
 <script lang="ts" module>
-    import { FFgemp,fetch } from "./FFgemp"
-    import { onMount } from "svelte";
+    import { FFgemp } from "./FFgemp"
     import Knob from "./Knob.svelte";
+    // < 2s chunks
+    // < lots of them together, buffering
+    // < loop end adjustment
+    //  < with visual...
 
     let FF = new FFgemp()
     let message = $state('');
@@ -10,7 +13,7 @@
     let modes = $state()
     // the input
     let file = $state()
-    onMount(async () => {
+    $effect(async () => {
         await FF.init()
         modes = FF.modes
         // file = 'aliomar.mp3'
@@ -20,11 +23,6 @@
 
     let transcoded:any = $state()
 
-    function handleDrop(e) {
-        e.preventDefault();
-        file = e.dataTransfer.files[0];
-        letsgo()
-    }
     let pending = $state()
     let last_config = $state()
     async function letsgo() {
@@ -79,6 +77,11 @@
     // source_video.src = URL.createObjectURL(file);
     
 
+    function handleDrop(e) {
+        e.preventDefault();
+        file = e.dataTransfer.files[0];
+        letsgo()
+    }
     function handleDragOver(e) {
         e.preventDefault();
     }
