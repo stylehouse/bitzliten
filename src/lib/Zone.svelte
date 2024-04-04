@@ -16,8 +16,10 @@
     $effect(async () => {
         await FF.init()
         modes = FF.modes
-        // file = 'aliomar.mp3'
-        // letsgo()
+        if ('auto') {
+            file = 'aliomar.mp3'
+            letsgo()
+        }
     });
 
 
