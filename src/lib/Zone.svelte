@@ -31,14 +31,23 @@
         // if differently configured
         let new_config = JSON.stringify(modes)
         if (new_config == last_config) return
-        last_config = new_config
 
-        // wait for it
-        // if (pending) await FF.abort()
+        if (pending) {
+            // < stop it
+            //    might be much faster to do 2s chunks?
+            // tell current job to start again when done
+            pending = 2
+            return
+        }
         pending = 1
         let result = await FF.transcode(file)
         transcoded = URL.createObjectURL(result)
+        if (pending == 2) {
+            // we tried to start a job while working on this one, so start again
+            setTimeout(() => letsgo(),1)
+        }
         pending = 0
+        last_config = new_config
     }
     function config_maybe_changed() {
         letsgo()
