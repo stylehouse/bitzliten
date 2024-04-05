@@ -38,12 +38,21 @@
         }
     });
 
+
     // these reset per file:
+
     // the selection
     let sel = $state({})
-    // how-encoded chunks
+
+    // size in seconds to encode at a time (a dublet)
+    let chunk_length = 2
     type adublet = {in:number,out:number, modes?:amodes, objectURL?:any}
+    // chunks, any time, any modes
     let dublets = $state([])
+    // chunks to look up and play (~~ playlist)
+    //  decided in letsgo()
+    let playlets = $state([])
+    
     // reset per file
     $effect(() => {
         if (file) {
@@ -53,7 +62,9 @@
     })
     // ~modes (via Knob twiddles) ~file -> processing
     $effect(() => {
-        modes && file && letsgo()
+        modes && file &&
+        // letsgo()
+            setTimeout(() => letsgo(),1)
     })
     // mode Knobs call this when adjusted,
     //  their bind:value={m.s} makes modes reactive too
@@ -66,16 +77,51 @@
 
     function letsgo() {
         if (sel.in == null) return []
-        let needs = undublets()
+        // make view of what to play
+        update_playlets()
+        // find gapos
+        let needs = playlets.filter(playlet => !playlet.ideal_dub)
+        // let needs = undublets()
         console.log("letsgo() nublets:",needs)
         needs.map(joblet => go_ffmpeg(joblet))
     }
     
     // generate a bunch of tiles for your ears to walk on
-    // size in seconds to encode at a time
-    let chunk_length = 2
-    function undublets() {
-        let selout = sel.out
+    function update_playlets() {
+        let {n_chunks} = get_timespace(sel)
+        // a set of dublets stretching across it
+        let nublets = create_unfulfilled_dublets(sel,n_chunks,chunk_length)
+        // ready it for being an ffmpeg job
+        //  ie include modes+modes_json, which includes its in|out points
+        nublets.map(nublet => compile_dublet_modes(nublet))
+
+        // link to candidate dublets
+        nublets.map(nublet => find_dub(nublet))
+
+        // and we now call that
+        playlets = nublets
+    }
+    // playlet // dublet
+    function find_dub(nublet) {
+        // try to match the whole of modes
+        let ideal = dublets.filter(dublet => {
+            return dublet.modes_json == nublet.modes_json
+        })[0]
+        if (ideal) {
+            nublet.ideal_dub = ideal
+        }
+        else {
+            // settle for any playable instance of that time
+            //  for Player to prefer an out-moded bitrate over dead air
+            let vague = dublets.filter(dublet => {
+                return dublet.in == nublet.in && dublet.out == nublet.out
+            })[0]
+            if (vague) {
+                nublet.vague_dub = vague
+            }
+        }
+    }
+    function get_timespace(sel) {
         // we have a notch
         let length = sel.out - sel.in
         if (isNaN(length)) throw "NaN"
@@ -83,27 +129,11 @@
             sel.out = sel.in + 4
         // < wind down if sel.out is > file length
 
-        let chunks = Math.ceil(length / chunk_length)
-
-        // a set of dublets stretching across it
-        let nublets = create_unfulfilled_dublets(sel,chunks,chunk_length)
-
-        // ready it for being an ffmpeg job
-        //  ie include modes, which includes its in|out points
-        compile_dublet_modes(nublets)
-
-        // to compare with what we have cached
-        let unhad = nublets.filter(nublet => {
-            return !have_a_dublet_for(nublet)
-        })
-        return unhad
+        // < blog on this convention
+        let n_chunks = Math.ceil(length / chunk_length)
+        return {length,n_chunks}
     }
-    function have_a_dublet_for(nublet:adublet) {
-        return dublets.some(dublet => {
-            return dublet.modes_json == nublet.modes_json
-        })
-    }
-    function compile_dublet_modes(nublets) {
+    function compile_dublet_modes(nublet) {
         let clone_modes = () => {
             // < why not?
             // return modes.map(mode => Object.fromEntries(mode))
@@ -112,26 +142,25 @@
                 return ha
             })
         }
-        nublets.map(nublet => {
-            nublet.modes = clone_modes()
-            // convert in|out to:
-            let seek = find_t_in_N(nublet.modes,'seek')
-            seek.s = nublet.in
-            let length = find_t_in_N(nublet.modes,'length')
-            length.s = nublet.out - nublet.in
-            if (length.s <= 0) throw "!length"
-            
-            // this now describes a unique dublet
-            nublet.modes_json = JSON.stringify(nublet.modes)
-        })
+
+        nublet.modes = clone_modes()
+        // convert in|out to:
+        let seek = find_t_in_N(nublet.modes,'seek')
+        seek.s = nublet.in
+        let length = find_t_in_N(nublet.modes,'length')
+        length.s = nublet.out - nublet.in
+        if (length.s <= 0) throw "!length"
+        
+        // this now describes a unique dublet
+        nublet.modes_json = JSON.stringify(nublet.modes)
     }
     function find_t_in_N(N,t) {
         let M = N.filter((m) => m.t == t)
         if (M.length > 1) throw "many t"
         return M[0]
     }
-    function create_unfulfilled_dublets(sel,chunks,chunk_length:number) :adublet[] {
-        return Array(chunks).fill(1).map((v,k) => {
+    function create_unfulfilled_dublets(sel,n_chunks,chunk_length:number) :adublet[] {
+        return Array(n_chunks).fill(1).map((v,k) => {
             return {
                 in: sel.in + k*chunk_length,
                 out: sel.in + k*chunk_length + chunk_length,
@@ -205,16 +234,14 @@
         aria-dropeffect="execute"
         style="border: 2px dashed #ccc; padding: 20px; text-align: center;"
     >
-        {#if !transcoded}
+        
+        {#if playlets.length}
+            <Player {playlets} />
+        {:else}
             <p>
                 Drag and drop an audio file here to transcode to 40kbps Opus
                 format.
             </p>
-        {:else}
-            <audio src={transcoded}
-                 bind:this={playerel}
-                 autoplay loop controls/>
-            
         {/if}
 
     </div>

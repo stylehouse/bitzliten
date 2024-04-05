@@ -53,7 +53,7 @@ export class FFgemp {
         // dedupe what they apply to
         let firstto = {}
         let cmds = []
-        this.modes.map(m => {
+        modes.map(m => {
             if (firstto[m.t]) return
             firstto[m.t] = m
 
