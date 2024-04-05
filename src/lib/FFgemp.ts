@@ -38,6 +38,7 @@ function modes() {
 }
 
 export class FFgemp {
+    public console_log: boolean = true;
     private loaded: boolean = false;
     private ffmpeg: any;
     private on_handlers: any = {};
@@ -68,7 +69,7 @@ export class FFgemp {
     // log messages
     private m(message: string) {
         this.on_handle('message', message)
-        console.log(message);
+        this.console_log && console.log(message);
     }
     on_handle(name: string, s: any) {
         let callback = this.on_handlers[name]
