@@ -37,14 +37,14 @@
             letsgo()
         }
     });
-    // now these reset per file:
 
+    // these reset per file:
     // the selection
     let sel = $state({})
     // how-encoded chunks
-    type adublet = {in:number,out:number, modes?:amodes, audio?:any}
+    type adublet = {in:number,out:number, modes?:amodes, objectURL?:any}
     let dublets = $state([])
-    // reset the above per file
+    // reset per file
     $effect(() => {
         if (file) {
             sel = {in:10,out:20}
@@ -62,27 +62,14 @@
     }
 
 
-    // let sel = $derived(file && {in:10,out:20})
-    // let dublets = $derived(file && [])
-    // ffmpeg job done
-    let new_dublet = (transcoded) => {
-        dublets.push({yer:1,transcoded})
-    }
-    let len_dublets = $derived(dublets && dublets.length)
-
     let transcoded:any = $state()
 
-    let needs = $state()
     function letsgo() {
-        if (1) {
-            if (sel.in == null) return []
-            needs = undublets()
-            // needs.map(joblet => go_ffmpeg(joblet))
-            
-        }
-        go_ffmpeg()
+        if (sel.in == null) return []
+        let needs = undublets()
+        console.log("letsgo() nublets:",needs)
+        needs.map(joblet => go_ffmpeg(joblet))
     }
-    $inspect(needs)
     
     // generate a bunch of tiles for your ears to walk on
     // size in seconds to encode at a time
@@ -154,31 +141,31 @@
 
     let pending = 0
     let last_config = ''
-    async function go_ffmpeg() {
-        // if differently configured
-        let new_config = JSON.stringify(modes)
-        if (new_config == last_config) return
-
+    async function go_ffmpeg(joblet:adublet) {
         if (pending) {
             // < stop it
-            //    might be much faster to do 2s chunks?
             // tell current job to start again when done
+            //  < could be the default to check for more nublets
             pending = 2
             return
         }
         pending = 1
-        let result = await FF.transcode(file)
-        transcoded = URL.createObjectURL(result)
-        new_dublet(transcoded)
+
+        let result = await FF.transcode(file,joblet.modes)
+        joblet.objectURL = URL.createObjectURL(result)
+
+        dublets.push(joblet)
+
         if (pending == 2) {
-            // we tried to start a job while working on this one, so start again
+            // we tried to start a job while working on this one
+            //  so start thinking again
             setTimeout(() => letsgo(),1)
         }
         if (message == 'Aborted()') {
             message = 'done'
         }
         pending = 0
-        last_config = new_config
+        last_config = joblet.modes_json
     }
     
 
@@ -247,9 +234,6 @@
             <mode on:click={letsgo}>AGAIN</mode>
             {#if pending}<mode>PENDING</mode>{/if}
             <p>cmds: {last_config}</p>
-        {/if}
-        {#if dublets}
-            <p>dublets:{len_dublets}</p>
         {/if}
     </div>
 </main>

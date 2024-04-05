@@ -47,7 +47,8 @@ export class FFgemp {
         // these can be edited in place
         this.modes = modes()
     }
-    modes_to_cmds() {
+    modes_to_cmds(modes) {
+        modes ||= this.modes
         // the pile of modes may be a huge knowledge base
         // dedupe what they apply to
         let firstto = {}
@@ -105,7 +106,7 @@ export class FFgemp {
     }
 
 
-    async transcode(file: File) {
+    async transcode(file: File,modes) {
 
         const data = await fetchFile(file);
         const input = 'input.mp3';
@@ -116,7 +117,7 @@ export class FFgemp {
         
         await this.ffmpeg.exec([
             "-i", input,
-            ...this.modes_to_cmds(),
+            ...this.modes_to_cmds(modes),
             // "-c:v","copy", // lossless video
             "-vn", // no video stream
             // "-c:v","mjpeg", // except for album art (requires .mkv)
