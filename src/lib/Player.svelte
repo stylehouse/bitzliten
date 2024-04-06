@@ -100,7 +100,7 @@
             }
             else {
                 // create it
-                cuelet = {in:playlet.in}
+                cuelet = {in:playlet.in,out:playlet.out}
                 cuelets.push(cuelet)
             }
             sync_cuelet(cuelet,playlet)
