@@ -60,7 +60,7 @@ export class FFgemp {
             let val = m.s
             if (m.cmd) {
                 let re = m.cmd(val)
-                console.log("+ mode "+m.t+": "+(re.join(" ")))
+                this.console_log && console.log("+ mode "+m.t+": "+(re.join(" ")))
                 cmds.push(...re)
             }
         })
