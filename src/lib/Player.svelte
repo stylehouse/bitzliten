@@ -115,7 +115,8 @@
                 remarks.push("switched to "+cuenow.in)
             }
             else {
-                return_in = left
+                // aiming a little early gives better results
+                return_in = left - accuracy
             }
         }
 
