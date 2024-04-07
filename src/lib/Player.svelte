@@ -60,17 +60,28 @@
             },
         }
     }
+    // it may have just been created
     function sync_cuelet(cuelet,playlet) {
+        // link to origin
         cuelet.playlet = playlet
-
+        // find playable
         let dublet = playlet.ideal_dub || playlet.vague_dub
         if (dublet) {
             cuelet.objectURL = dublet.objectURL
         }
+        // < doing this already (we ) stops the first player playing. wtf
         // else if (playlet.objectURL) {
         //     cuelet.objectURL = playlet.objectURL
         // }
-            
+        // intime|outtime start from 0
+        localise_time(cuelet)
+    }
+    // map the in|out points (datum from start of the track)
+    //  to time, which starts at 0
+    function localise_time(cuelet) {
+        if (sel.in == null) throw "!sel.in"
+        cuelet.intime = cuelet.in - sel.in;
+        cuelet.outtime = cuelet.out - sel.in;
     }
 
     // handles wraparound
@@ -78,16 +89,6 @@
         let i = cuelets.indexOf(cuelet)
         if (i < 0) throw "!cuelet"
         return cuelets[i+1] || cuelets[0]
-    }
-
-    // map the in|out points (datum from start of the track)
-    //  to time, which starts at 0
-    function get_inouttime(cuelet) {
-        if (sel.in == null) throw "!sel.in"
-        return {
-            intime: cuelet.in - sel.in,
-            outtime: cuelet.out - sel.in,
-        }
     }
 
 // our loop
@@ -102,11 +103,10 @@
     $effect(() => {
         let la_out = null
         cuelets.map((cuelet,i) => {
-            let {intime,outtime} = get_inouttime(cuelet)
-            if (la_out && la_out != intime) {
+            if (la_out && la_out != cuelet.intime) {
                 throw "1.out != 2.in"
             }
-            la_out = outtime
+            la_out = cuelet.outtime
         })
     })
 
@@ -138,15 +138,14 @@
         //  causing a loop of coming in here again
         let return_in = 0.6
         
-        let {intime,outtime} = get_inouttime(cuenow)
-        if (time == intime) {
+        if (time == cuenow.intime) {
             tryhitplay(cuenow.el)
             remarks.push(`play ${cuenow.in}`)
             if (cuenow.in >= 16) {
                 // debugger
             }
         }
-        let length = outtime - intime
+        let length = cuenow.outtime - cuenow.intime
         let isat = cuenow.el.currentTime
         let left = length - isat
         if (left < 2) {
@@ -164,7 +163,7 @@
                     left = 0
                 }
                 // make timing perfect
-                time = outtime
+                time = cuenow.outtime
                 if (!cuenext.el) throw "cuenext still not <audio>"
                 if (cuenext.in < cuenow.in) {
                     remarks.push("wrapped")
@@ -198,7 +197,7 @@
             cuenow = cuenow
             if (!cuenow.el) return console.log("wind tapiate() !el")
             let isat = cuenow.el.currentTime
-            time = intime*1 + isat*1
+            time = cuenow.intime*1 + isat*1
             console.log("wind tapiate() @"+time)
             // < why adjusting $time isn't enough to redo this effect
             tapiations++
