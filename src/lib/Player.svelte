@@ -15,8 +15,8 @@
     // the firstmost in and lastmost out of playlets
     let sel
 
-    // < time, fading, etc
-    // playlets -> cuelets
+    // < fading, etc
+// playlets -> cuelets
     $effect(() => {
         // < buffering
         console.log("SYNC CLUELETS")
@@ -24,7 +24,73 @@
         sync_cuelets(playlets)
     })
 
-    // our loop
+    function sync_cuelets(playlets) {
+        let tr = transact_goners(cuelets)
+        let unhad = cuelets.slice()
+        playlets.map(playlet => {
+            let cuelet = cuelets.find((cuelet) => cuelet.in == playlet.in)
+            if (cuelet) {
+                tr.keep(cuelet)
+            }
+            else {
+                // create it
+                cuelet = {in:playlet.in,out:playlet.out}
+                cuelets.push(cuelet)
+            }
+            sync_cuelet(cuelet,playlet)
+        })
+        tr.done()
+    }
+    // maintain|whittle an array
+    //  removing things not keep() before done().
+    // you may push more in meanwhile
+    function transact_goners(N) {
+        let unhad = N.slice()
+        return {
+            keep: (z) => {
+                unhad = unhad.filter(s => s != z)
+            },
+            done: (z) => {
+                let deletes = unhad.map((gone) => {
+                    let i = N.indexOf(gone)
+                    if (i < 0) throw "gone goner"
+                    return i
+                })
+                deletes.reverse().map(i => N.splice(i,1))
+            },
+        }
+    }
+    function sync_cuelet(cuelet,playlet) {
+        cuelet.playlet = playlet
+
+        let dublet = playlet.ideal_dub || playlet.vague_dub
+        if (dublet) {
+            cuelet.objectURL = dublet.objectURL
+        }
+        // else if (playlet.objectURL) {
+        //     cuelet.objectURL = playlet.objectURL
+        // }
+            
+    }
+
+    // handles wraparound
+    function next_cuelet(cuelet) {
+        let i = cuelets.indexOf(cuelet)
+        if (i < 0) throw "!cuelet"
+        return cuelets[i+1] || cuelets[0]
+    }
+
+    // map the in|out points (datum from start of the track)
+    //  to time, which starts at 0
+    function get_inouttime(cuelet) {
+        if (sel.in == null) throw "!sel.in"
+        return {
+            intime: cuelet.in - sel.in,
+            outtime: cuelet.out - sel.in,
+        }
+    }
+
+// our loop
     let time = 0
     let spinning = $state(0)
     let amo = 0.5
@@ -139,22 +205,6 @@
         },return_in*1000)
     }
 
-    // handles wraparound
-    function next_cuelet(cuelet) {
-        let i = cuelets.indexOf(cuelet)
-        if (i < 0) throw "!cuelet"
-        return cuelets[i+1] || cuelets[0]
-    }
-
-    // map the in|out points (datum from start of the track)
-    //  to time, which starts at 0
-    function get_inouttime(cuelet) {
-        if (sel.in == null) throw "!sel.in"
-        return {
-            intime: cuelet.in - sel.in,
-            outtime: cuelet.out - sel.in,
-        }
-    }
 
     // cuelet finishes having <audio>
     function handleAudioEnded(cuelet) {
@@ -166,55 +216,6 @@
         },amo*1000)
     }
 
-
-    function sync_cuelets(playlets) {
-        let tr = transact_goners(cuelets)
-        let unhad = cuelets.slice()
-        playlets.map(playlet => {
-            let cuelet = cuelets.find((cuelet) => cuelet.in == playlet.in)
-            if (cuelet) {
-                tr.keep(cuelet)
-            }
-            else {
-                // create it
-                cuelet = {in:playlet.in,out:playlet.out}
-                cuelets.push(cuelet)
-            }
-            sync_cuelet(cuelet,playlet)
-        })
-        tr.done()
-    }
-    // maintain|whittle an array
-    //  removing things not keep() before done().
-    // you may push more in meanwhile
-    function transact_goners(N) {
-        let unhad = N.slice()
-        return {
-            keep: (z) => {
-                unhad = unhad.filter(s => s != z)
-            },
-            done: (z) => {
-                let deletes = unhad.map((gone) => {
-                    let i = N.indexOf(gone)
-                    if (i < 0) throw "gone goner"
-                    return i
-                })
-                deletes.reverse().map(i => N.splice(i,1))
-            },
-        }
-    }
-    function sync_cuelet(cuelet,playlet) {
-        cuelet.playlet = playlet
-
-        let dublet = playlet.ideal_dub || playlet.vague_dub
-        if (dublet) {
-            cuelet.objectURL = dublet.objectURL
-        }
-        // else if (playlet.objectURL) {
-        //     cuelet.objectURL = playlet.objectURL
-        // }
-            
-    }
 
 
 </script>
