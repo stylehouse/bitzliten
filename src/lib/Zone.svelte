@@ -10,7 +10,7 @@
     let FF = new FFgemp()
     FF.console_log = false
     let message = $state('');
-    FF.on('message',(s) => message = s)
+    FF.on('message',(s:string) => message = s)
 
     // the config
     // < many more configs, mutextualisations.
@@ -29,12 +29,19 @@
 
     // the input
     let file = $state()
+    // $effect blocks are not async, see https://github.com/sveltejs/svelte/issues/9520#issuecomment-1817092724
+    //  basically $.get() won't establish a dependency
+    //   for anything async to the call to this $effect()
+    //    which is everything before the first await? (ie nothing)
+    //  async $.set() does work, on modes|file, because it doesn't matter where it's coming from?
+    //   then how do feedback loops stop?
+    // once on init we wait for ffmpeg to load then load a file
     $effect(async () => {
         await FF.init()
         modes = FF.modes
         if ('auto') {
             file = 'aliomar.mp3'
-            letsgo()
+            // letsgo()
         }
     });
 
@@ -60,7 +67,9 @@
             dublets = []
         }
     })
-    // ~modes (via Knob twiddles) ~file -> processing
+
+    // two paths of config change notification:
+    // mutation inside ~modes (via Knob twiddles) or ~file -> processing
     $effect(() => {
         modes && file &&
         // letsgo()
@@ -71,9 +80,6 @@
     function config_maybe_changed() {
         letsgo()
     }
-
-
-    let transcoded:any = $state()
 
     function letsgo() {
         if (sel.in == null) return []
@@ -227,8 +233,8 @@
 <main>
     <p>{message}</p>
     <div
-        on:drop={handleDrop}
-        on:dragover={handleDragOver}
+        ondrop={handleDrop}
+        ondragover={handleDragOver}
         class="drop-zone"
         role="dropzone"
         aria-dropeffect="execute"
@@ -258,7 +264,7 @@
                 {/if}
                 </mode>
             {/each}
-            <mode on:click={letsgo}>AGAIN</mode>
+            <button on:click={letsgo}>AGAIN</button>
             {#if pending}<mode>PENDING</mode>{/if}
             <p>cmds: {last_config}</p>
         {/if}

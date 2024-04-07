@@ -58,7 +58,7 @@
     }
     let tapiations = $state(0)
     // how close we have to be to the ideal time to hit play()
-    let accuracy = 0.01
+    let accuracy = 0.004
     let tapiate_pending = false
     function tapiate(the) {
         tapiations && 1
@@ -116,7 +116,8 @@
             }
             else {
                 // aiming a little early gives better results
-                return_in = left - accuracy
+                // < is it better to handleAudioEnded(cuelet) -> play() next?
+                return_in = left - accuracy*0.6
             }
         }
 
