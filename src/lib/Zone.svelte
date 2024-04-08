@@ -1,9 +1,10 @@
 <script lang="ts" module>
     import { FFgemp } from "./FFgemp"
+    import type { quadjustable, amode, amodes, adublet } from "./FFgemp"
     import Knob from "./Knob.svelte";
     import Player from "./Player.svelte";
-    // < 2s chunks
-    // < lots of them together, buffering
+    // 2s chunks
+    // lots of them together, buffering
     // < loop end adjustment
     //  < with visual...
 
@@ -14,17 +15,6 @@
 
     // the config
     // < many more configs, mutextualisations.
-    type quadjustable = any
-    type amode = {
-        t:string,
-        // the value
-        s?:quadjustable,
-        // if value is adjustable
-        min?:number, max?:number,
-        // returns ffmpeg command options, is given s
-        cmd?:(s: quadjustable) => string[],
-    }
-    type amodes = Array<amode>
     let modes:undefined|amodes = $state()
 
     // the input
@@ -53,7 +43,6 @@
 
     // size in seconds to encode at a time (a dublet)
     let chunk_length = 2
-    type adublet = {in:number,out:number, modes?:amodes, objectURL?:any}
     // chunks, any time, any modes
     let dublets = $state([])
     // chunks to look up and play (~~ playlist)

@@ -13,6 +13,29 @@ export async function fetch(url) {
 // - drag and drop (is different per framework)
 // - <video>
 
+// types
+    type quadjustable = any;
+
+    type amode = {
+        t: string; // the value
+        s?: quadjustable; // if value is adjustable
+        min?: number;
+        max?: number; // returns ffmpeg command options, is given s
+        cmd?: (s: quadjustable) => string[];
+    };
+
+    type amodes = Array<amode>;
+
+    type adublet = {
+        in: number;
+        out: number;
+        modes?: amodes;
+        objectURL?: any;
+    };
+    type acuelet = adublet & {intime:number,outtime:number,objectURL:string,playlet:adublet}
+
+    export type { quadjustable, amode, amodes, adublet,acuelet };
+
 // inform ui of how to play with things
 function modes() {
     return [

@@ -7,6 +7,7 @@
             throw er
         }
     }
+    import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
     let {playlets} = $props()
     // figures approach,
     let cuelets = $state([])
@@ -14,21 +15,24 @@
     let near = $state([])
     // the firstmost in and lastmost out of playlets
     let sel
+    function init_sel() {
+        sel = {in: playlets[0].in,out: playlets.slice(-1)[0].out}
+    }
 
     // < fading, etc
 // playlets -> cuelets
     $effect(() => {
         // < buffering
         console.log("SYNC CLUELETS")
-        sel = {in: playlets[0].in,out: playlets.slice(-1)[0].out}
+        init_sel()
         sync_cuelets(playlets)
     })
 
     function sync_cuelets(playlets) {
         let tr = transact_goners(cuelets)
-        let unhad = cuelets.slice()
-        playlets.map(playlet => {
-            let cuelet = cuelets.find((cuelet) => cuelet.in == playlet.in)
+        let unhad:acuelet[] = cuelets.slice()
+        playlets.map((playlet:adublet) => {
+            let cuelet:any = cuelets.find((cuelet) => cuelet.in == playlet.in)
             if (cuelet) {
                 tr.keep(cuelet)
             }
@@ -61,7 +65,7 @@
         }
     }
     // it may have just been created
-    function sync_cuelet(cuelet,playlet) {
+    function sync_cuelet(cuelet:acuelet,playlet:adublet) {
         // link to origin
         cuelet.playlet = playlet
         // find playable
@@ -112,9 +116,10 @@
 
     // proto v2
     // watch this cuelet play out
-    let cuenow = $state()
+    //  it is undef for less time than cuenext
+    let cuenow:null|acuelet = $state()
     // <audio> to come along, what to switch to
-    let cuenext = $state()
+    let cuenext:null|acuelet = $state(null)
     let windup = $state(0)
     function init_cuenow() {
         cuenow = cuelets[0]
@@ -131,12 +136,13 @@
         let remarks = []
         if (time == null) return
         if (!cuenow) init_cuenow()
+        if (!cuenow) throw "!cuenow"
         if (!cuenow.el) {
             return console.log("tapiate() no el yet")
         }
         // a delay to keep updating time from the player,
         //  causing a loop of coming in here again
-        let return_in = 0.6
+        let return_in:null|number = 0.6
         
         if (time == cuenow.intime) {
             tryhitplay(cuenow.el)
