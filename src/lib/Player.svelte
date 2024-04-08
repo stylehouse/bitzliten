@@ -157,6 +157,15 @@
         if (!cuenow.el) {
             return console.log("tapiate() no el yet")
         }
+        let el = cuenow.el
+        if (isNaN(el.duration)) {
+            el.oncanplaythrough = () => {
+                // always happens
+                tapiate()
+                delete el.oncanplaythrough
+            }
+            return console.log("tapiate() not loaded yet")
+        }
         // a delay to keep updating time from the player,
         //  causing a loop of coming in here again
         let return_in:null|number = 0.6
