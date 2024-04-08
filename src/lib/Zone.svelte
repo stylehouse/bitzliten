@@ -2,7 +2,10 @@
     import { FFgemp } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet } from "./FFgemp"
     import Knob from "./Knob.svelte";
+    // with <audio> is awkward. maybe somewhere?
     import Player from "./Player.svelte";
+    // using the audio api
+    import Schaud from "./Schaud.svelte";
     // 2s chunks
     // lots of them together, buffering
     // < loop end adjustment
@@ -220,7 +223,7 @@
     >
         
         {#if playlets.length}
-            <Player {playlets} />
+            <Schaud {playlets} />
         {:else}
             <p>
                 Drag and drop an audio file here to transcode to 40kbps Opus
