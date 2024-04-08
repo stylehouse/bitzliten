@@ -191,15 +191,9 @@
                     set_time(cuenow.outtime)
                 }
                 cuenow = cuenext
-                if (!cuenow.objectURL) {
-                    if (cuenow.playlet.objectURL) {
-                        console.log(`cuelet ${cuenow.in} has no .objectURL`)
-                        cuenow.objectURL = cuenow.playlet.objectURL
-                    }
-                }
                 cuenext = null
                 is_switching = true
-                remarks.push("switched to "+cuenow.in)
+                remarks.push("-> "+cuenow.in)
             }
             else if (left < accuracy*5) {
                 // almost there
