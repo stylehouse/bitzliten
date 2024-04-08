@@ -129,8 +129,16 @@
     }
     let tapiations = $state(0)
     // how close we have to be to the ideal time to hit play()
-    let accuracy = 0.004
+    let accuracy = 0.003
     let tapiate_pending = false
+    function dec(s,places=4) {
+        s = s*1
+        if (isNaN(s)) throw "ohno"
+        return s.toFixed(places) * 1
+    }
+    function set_time(to) {
+        time = dec(to)
+    }
     function tapiate(the) {
         tapiations && 1
         let remarks = []
@@ -143,6 +151,7 @@
         // a delay to keep updating time from the player,
         //  causing a loop of coming in here again
         let return_in:null|number = 0.6
+        let is_switching = false
         
         if (time == cuenow.intime) {
             tryhitplay(cuenow.el)
@@ -154,6 +163,7 @@
         let length = cuenow.outtime - cuenow.intime
         let isat = cuenow.el.currentTime
         let left = length - isat
+        left = left.toFixed(4)*1
         if (left < 2) {
             // <audio> to come along, what to switch to
             remarks.push(`   (-${left})`)
@@ -162,17 +172,22 @@
                 near.push(cuenext)
                 remarks.push("near cuenext")
             }
-            if (left < accuracy) {
+            if (left < accuracy/3) {
                 // close enough to go it
                 if (left < 0) {
                     remarks.push("gapped "+left)
                     left = 0
                 }
-                // make timing perfect
-                time = cuenow.outtime
+
                 if (!cuenext.el) throw "cuenext still not <audio>"
+                // make timing perfect
                 if (cuenext.in < cuenow.in) {
                     remarks.push("wrapped")
+                    if (cuenext.intime != 0) throw "!0"
+                    set_time(cuenext.intime)
+                }
+                else {
+                    set_time(cuenow.outtime)
                 }
                 cuenow = cuenext
                 if (!cuenow.objectURL) {
@@ -182,19 +197,31 @@
                     }
                 }
                 cuenext = null
-                return_in = null
+                is_switching = true
                 remarks.push("switched to "+cuenow.in)
+            }
+            else if (left < accuracy*5) {
+                // almost there
+                remarks.push("almost")
+                return_in = left-accuracy/3
             }
             else {
                 // aiming a little early gives better results
                 // < is it better to handleAudioEnded(cuelet) -> play() next?
-                return_in = left - accuracy*0.6
+                let better = Math.min(return_in, left - accuracy*4)
+                if (better != return_in) remarks.push("aiming")
+                return_in = better
             }
         }
 
+        // round it nice
+        return_in = dec(return_in)
         console.log(`tapiate() @ ${time} for ${return_in}  ${remarks.join("  ")}`)
 
-        if (return_in == null) return tapiate()
+        if (is_switching) {
+            // to change cuelet, we go through here when time==.intime
+            return tapiate()
+        }
 
         if (tapiate_pending) return
         tapiate_pending = true
@@ -203,7 +230,7 @@
             cuenow = cuenow
             if (!cuenow.el) return console.log("wind tapiate() !el")
             let isat = cuenow.el.currentTime
-            time = cuenow.intime*1 + isat*1
+            set_time(cuenow.intime*1 + isat*1)
             console.log("wind tapiate() @"+time)
             // < why adjusting $time isn't enough to redo this effect
             tapiations++
