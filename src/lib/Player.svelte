@@ -121,14 +121,12 @@
     let cuenow:null|acuelet = $state()
     // <audio> to come along, what to switch to
     let cuenext:null|acuelet = $state(null)
-    let windup = $state(0)
     function init_cuenow() {
         cuenow = cuelets[0]
         if (!cuenow) throw "!cuenow"
         near = [cuenow]
         if (sel.in == null) throw "!sel.in"
     }
-    let tapiations = $state(0)
     // how close we have to be to the ideal time to hit play()
     let accuracy = 0.001
     let tapiate_pending = false
@@ -140,8 +138,18 @@
     function set_time(to) {
         time = dec(to)
     }
+    let theone = {}
     function tapiate(the) {
-        tapiations && 1
+        let no_return = false
+        if (the) {
+            // a loop we want to dedup
+            if (the != theone) {
+                no_return = true
+            }
+            else {
+                theone = {}
+            }
+        }
         let remarks = []
         if (time == null) return
         if (!cuenow) init_cuenow()
@@ -218,20 +226,23 @@
 
         if (is_switching) {
             // to change cuelet, we go through here when time==.intime
-            return tapiate()
+            return tapiate(theone)
         }
 
+        if (no_return) return console.log("tapiate() ZOMBIE")
         if (tapiate_pending) return
         tapiate_pending = true
+        let theone_was = theone
         setTimeout(() => {
             tapiate_pending = false
             cuenow = cuenow
             if (!cuenow.el) return console.log("wind tapiate() !el")
             let isat = cuenow.el.currentTime
             set_time(cuenow.intime*1 + isat*1)
-            console.log("wind tapiate() @"+time)
-            // < why adjusting $time isn't enough to redo this effect
-            tapiations++
+            // console.log("wind tapiate() @"+time)
+            // < setting time isn't enough to redo this effect
+            //   (gone code) had to do tapiations++ here and tapations&&1 there to react
+            tapiate(theone_was)
         },return_in*1000)
     }
 
