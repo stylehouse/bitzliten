@@ -44,10 +44,10 @@
     // size in seconds to encode at a time (a dublet)
     let chunk_length = 2
     // chunks, any time, any modes
-    let dublets = $state([])
+    let dublets:Array<adublet> = $state([])
     // chunks to look up and play (~~ playlist)
     //  decided in letsgo()
-    let playlets = $state([])
+    let playlets:Array<adublet> = $state([])
     
     // reset per file
     $effect(() => {
@@ -164,11 +164,10 @@
         })
     }
 
-    let pending = 0
-    let last_config = ''
+    let pending = false
     async function go_ffmpeg(joblet:adublet) {
         if (pending) return
-        pending = 1
+        pending = true
 
         let result = await FF.transcode(file,joblet.modes)
         joblet.objectURL = URL.createObjectURL(result)
@@ -180,8 +179,7 @@
         if (message == 'Aborted()') {
             message = 'done'
         }
-        pending = 0
-        last_config = joblet.modes_json
+        pending = false
     }
     
 
@@ -246,7 +244,6 @@
             {/each}
             <button on:click={letsgo}>AGAIN</button>
             {#if pending}<mode>PENDING</mode>{/if}
-            <p>cmds: {last_config}</p>
         {/if}
     </div>
 </main>

@@ -115,7 +115,6 @@
         })
     })
 
-    // proto v2
     // watch this cuelet play out
     //  it is undef for less time than cuenext
     let cuenow:null|acuelet = $state()
