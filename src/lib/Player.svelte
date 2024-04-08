@@ -130,7 +130,7 @@
     }
     let tapiations = $state(0)
     // how close we have to be to the ideal time to hit play()
-    let accuracy = 0.003
+    let accuracy = 0.001
     let tapiate_pending = false
     function dec(s,places=4) {
         s = s*1
@@ -173,7 +173,10 @@
                 near.push(cuenext)
                 remarks.push("near cuenext")
             }
-            if (left < accuracy/3) {
+
+            let wrapping = cuenext.in < cuenow.in
+
+            if (left < accuracy) {
                 // close enough to go it
                 if (left < 0) {
                     remarks.push("gapped "+left)
@@ -182,7 +185,7 @@
 
                 if (!cuenext.el) throw "cuenext still not <audio>"
                 // make timing perfect
-                if (cuenext.in < cuenow.in) {
+                if (wrapping) {
                     remarks.push("wrapped")
                     if (cuenext.intime != 0) throw "!0"
                     set_time(cuenext.intime)
@@ -198,7 +201,7 @@
             else if (left < accuracy*5) {
                 // almost there
                 remarks.push("almost")
-                return_in = left-accuracy/3
+                return_in = left-accuracy*3
             }
             else {
                 // aiming a little early gives better results
