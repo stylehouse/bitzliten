@@ -16,6 +16,7 @@
     // the firstmost in and lastmost out of playlets
     let sel
     function init_sel() {
+        if (!playlets[0]) return
         sel = {in: playlets[0].in,out: playlets.slice(-1)[0].out}
     }
 

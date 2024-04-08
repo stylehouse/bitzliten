@@ -167,25 +167,16 @@
     let pending = 0
     let last_config = ''
     async function go_ffmpeg(joblet:adublet) {
-        if (pending) {
-            // < stop it
-            // tell current job to start again when done
-            //  < could be the default to check for more nublets
-            pending = 2
-            return
-        }
+        if (pending) return
         pending = 1
 
         let result = await FF.transcode(file,joblet.modes)
         joblet.objectURL = URL.createObjectURL(result)
-
         dublets.push(joblet)
 
-        if (pending == 2) {
-            // we tried to start a job while working on this one
-            //  so start thinking again
-            setTimeout(() => letsgo(),1)
-        }
+        // back to deciding whether to do anything
+        setTimeout(() => letsgo(),0)
+
         if (message == 'Aborted()') {
             message = 'done'
         }
