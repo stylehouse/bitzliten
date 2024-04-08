@@ -189,15 +189,8 @@
                 else {
                     set_time(cuenow.outtime)
                 }
-                cuenow = cuenext
-                if (!cuenow.objectURL) {
-                    if (cuenow.playlet.objectURL) {
-                        console.log(`cuelet ${cuenow.in} has no .objectURL`)
-                        cuenow.objectURL = cuenow.playlet.objectURL
-                    }
-                }
-                cuenext = null
-                is_switching = true
+                // set_cuenow()
+                // is_switching = true
                 remarks.push("switched to "+cuenow.in)
             }
             else if (left < accuracy*5) {
@@ -213,7 +206,7 @@
                 return_in = better
             }
         }
-
+        return_in = 0.6
         // round it nice
         return_in = dec(return_in)
         console.log(`tapiate() @ ${time} for ${return_in}  ${remarks.join("  ")}`)
@@ -236,15 +229,31 @@
             tapiations++
         },return_in*1000)
     }
+    // can only be set to cuenext, which the tapiate() loop sorts out
+    function set_cuenow() {
+        cuenow = cuenext
+        if (!cuenow.objectURL) {
+            if (cuenow.playlet.objectURL) {
+                console.log(`cuelet ${cuenow.in} has no .objectURL`)
+                cuenow.objectURL = cuenow.playlet.objectURL
+            }
+        }
+        cuenext = null
+    }
 
 
     // cuelet finishes having <audio>
     function handleAudioEnded(cuelet) {
-        setTimeout(() => {
+        setTimeout(async () => {
             console.log("<audio> ended: "+cuelet.in)
+            if (cuelet != cuenow) return
+            if (!cuenext) throw "!cuenext"
             // <audio> goes away
             delete cuelet.el
             near = near.filter(n => n != cuelet)
+
+            set_cuenow()
+            await tryhitplay(cuenow.el)
         },amo*1000)
     }
 
