@@ -178,7 +178,8 @@
                 // debugger
             }
         }
-        let length = cuenow.el.duration
+        let length = 2
+        // cuenow.el.duration
         let isat = cuenow.el.currentTime
         let left = length - isat
         left = left.toFixed(4)*1
