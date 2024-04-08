@@ -54,6 +54,7 @@
         if (file) {
             sel = {in:10,out:20}
             dublets = []
+            playlets = []
         }
     })
 
@@ -211,7 +212,6 @@
     function handleDrop(e) {
         e.preventDefault();
         file = e.dataTransfer.files[0];
-        debugger
         letsgo()
     }
     function handleDragOver(e) {
