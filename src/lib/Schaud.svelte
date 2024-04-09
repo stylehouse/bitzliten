@@ -145,7 +145,7 @@
 
             // crossfade to next
             let cuenext = next_cuelet(cuenow)
-            if (cuenext.in < cuenow.out) {
+            if (cuenext.in != cuenow.out) {
                 // < how to get to the time to do it more reliably?
                 let left = source.buffer.duration - fadetime
                 setTimeout(() => {
@@ -160,9 +160,13 @@
                 // on the cuelet that was cuenow when it started playing
                 delete cuelet.source
                 // cuenext will already be cuenow and playing (has .source) if crossfading
+                //  this may trigger if we get >1 cuelet ahead of now somehow
                 if (cuenow != cuelet && cuenow != cuenext) debugger
-                cuenow = cuenext
-                scheduleNextSound(the);
+                if (cuelet == cuenow) {
+                    // nobody else (crossfading) has altered cuenow since we started
+                    cuenow = cuenext
+                    scheduleNextSound(the);
+                }
             };
         }
 
@@ -179,8 +183,8 @@
 
     }
     type asource = AudioBufferSourceNode & {fadein:Function,fadeout:Function}
-    function source_cuelet(cuelet:adublet) {
-        let source = audioContext.createBufferSource();
+    function source_cuelet(cuelet:adublet):asource {
+        let source:asource = audioContext.createBufferSource() as asource;
         source.buffer = cuelet.buffer;
 
 
@@ -189,15 +193,15 @@
         source.connect(gain);
         gain.connect(audioContext.destination);
 
-        // < fades
-        let fade = (suddenly,thence,fadetime) => {
+        // fades
+        let fade = (suddenly,thence,fadetime:number) => {
             gain.gain.setValueAtTime(suddenly, audioContext.currentTime);
             gain.gain.linearRampToValueAtTime(thence, audioContext.currentTime + fadetime);
         }
         source.fadein = (fadetime) => fade(0,1,fadetime)
         source.fadeout = (fadetime) => fade(1,0,fadetime)
 
-        return source:asource
+        return source
     }
     function oscil() {
         const oscillator = audioContext.createOscillator();
