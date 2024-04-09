@@ -118,14 +118,11 @@
     let fadetime = 1.5
     let upto = $state(0)
     let cuenow:null|adublet = null
-    let theone = {}
     // we shall run this whenever a new cuelet needs to .source and .play()
     //  also runs at random other times
-    function scheduleNextSound(the?,c?) {
+    function scheduleNextSound(c?) {
         c ||= {}
-        // dedupe callbacks to here
-        if (the && the != theone) return
-        the = theone = {}
+        let remarks = []
         // on init
         cuenow ||= cuelets[0]
         if (!cuenow) throw "!cuenow"
@@ -133,6 +130,7 @@
         let cuelet = cuenow
         // one of these while playing
         if (!cuenow.source) {
+            remarks.push("new")
             let source = cuenow.source = source_cuelet(cuenow)
 
             // crossfade from last
@@ -151,7 +149,7 @@
                 setTimeout(() => {
                     cuelet.source.fadeout(fadetime)
                     cuenow = cuenext
-                    scheduleNextSound(null,{fadein:fadetime})
+                    scheduleNextSound({fadein:fadetime})
                 },left * 1000)
             }
 
@@ -165,7 +163,7 @@
                 if (cuelet == cuenow) {
                     // nobody else (crossfading) has altered cuenow since we started
                     cuenow = cuenext
-                    scheduleNextSound(the);
+                    scheduleNextSound();
                 }
             };
         }
@@ -173,13 +171,8 @@
         upto = cuelet.in
         
 
-        console.log(`NextSound: ${cuelet.in}  ${cuelet.buffer.duration} {cuenext.in} < {cuenow.out}`)
+        console.log(`NextSound: ${cuelet.in}  ${dec(audioContext.currentTime)}  ${remarks.join("  ")}`)
 
-
-        console.log("Zourece",{
-            sourcetime: cuenow.source.currentTime,
-            time: audioContext.currentTime,
-        })
 
     }
     type asource = AudioBufferSourceNode & {fadein:Function,fadeout:Function}
@@ -210,6 +203,12 @@
         // Set the frequency to 60Hz
         oscillator.frequency.value = 260;
         return oscillator
+    }
+    // round number
+    function dec(s,places=4) {
+        s = s*1
+        if (isNaN(s)) throw "ohno"
+        return s.toFixed(places) * 1
     }
 </script>
 
