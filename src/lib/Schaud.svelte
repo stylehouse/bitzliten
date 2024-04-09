@@ -285,11 +285,9 @@
         </soundbox>
     {/each}
 
-    <needlebox>
-        <soundneedle style="left:{$needlepos.left}px;top:{$needlepos.top}px;">
-            <img src="pointer.webp" />
-        </soundneedle>
-    </needlebox>
+    <soundneedle style="left:{$needlepos.left}px;top:{$needlepos.top}px;">
+        <img src="pointer.webp" />
+    </soundneedle>
     {#if it_seems_not_to_play}
         <bigdiv onclick={start_from_gesture}>click here</bigdiv>
     {/if}
@@ -301,22 +299,16 @@
     <style>
         bigdiv {
             position:fixed;
-            opacity:0.5;
+            opacity:0.7;
             background-color:bisque;
             border-radius: 1em;
             width: 40%;
             height: 40%;
+            left: 30%;
             top: 30%;
         }
         div span {
             position:relative;
-        }
-        needlebox {
-            left:0px;
-            position:absolute;
-            overflow:hidden;
-            width: 100%;
-            height: 100%;
         }
         soundneedle {
             position:absolute;
