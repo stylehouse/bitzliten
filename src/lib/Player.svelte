@@ -8,6 +8,9 @@
         }
     }
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
+
+    // is uglier than Schaud.svelte
+
     let {playlets} = $props()
     // figures approach,
     let cuelets = $state([])
@@ -24,7 +27,7 @@
 // playlets -> cuelets
     $effect(() => {
         // < buffering
-        console.log("SYNC CLUELETS")
+        console.log("SYNC CUELETS")
         init_sel()
         sync_cuelets(playlets)
     })
@@ -98,8 +101,13 @@
 
 // our loop
     let time = 0
-    let spinning = $state(0)
+    function set_time(to) {
+        time = dec(to)
+    }
+    // while after stop to remove <audio>
     let amo = 0.5
+    // how close we have to be to the ideal time to hit play()
+    let accuracy = 0.001
     // cuelets (may) have <audio> states
     $effect(() => {
         tapiate()
@@ -114,7 +122,23 @@
             la_out = cuelet.outtime
         })
     })
-
+    function cuenow_sanity() {
+        if (!cuenow.el) {
+            console.log("tapiate() no el yet")
+            return
+        }
+        let el = cuenow.el
+        if (isNaN(el.duration)) {
+            el.oncanplaythrough = () => {
+                // always happens
+                tapiate()
+                delete el.oncanplaythrough
+            }
+            console.log("tapiate() not loaded yet")
+            return
+        }
+        return 'ok'
+    }
     // watch this cuelet play out
     //  it is undef for less time than cuenext
     let cuenow:null|acuelet = $state()
@@ -126,16 +150,11 @@
         near = [cuenow]
         if (sel.in == null) throw "!sel.in"
     }
-    // how close we have to be to the ideal time to hit play()
-    let accuracy = 0.001
     let tapiate_pending = false
     function dec(s,places=4) {
         s = s*1
         if (isNaN(s)) throw "ohno"
         return s.toFixed(places) * 1
-    }
-    function set_time(to) {
-        time = dec(to)
     }
     let theone = {}
     function tapiate(the) {
@@ -153,18 +172,8 @@
         if (time == null) return
         if (!cuenow) init_cuenow()
         if (!cuenow) throw "!cuenow"
-        if (!cuenow.el) {
-            return console.log("tapiate() no el yet")
-        }
-        let el = cuenow.el
-        if (isNaN(el.duration)) {
-            el.oncanplaythrough = () => {
-                // always happens
-                tapiate()
-                delete el.oncanplaythrough
-            }
-            return console.log("tapiate() not loaded yet")
-        }
+        if (!cuenow_sanity()) return
+
         // a delay to keep updating time from the player,
         //  causing a loop of coming in here again
         let return_in:null|number = 0.6
@@ -280,7 +289,6 @@
     {:else}
         o
     {/if}
-
 {/each}
 </div>
 
