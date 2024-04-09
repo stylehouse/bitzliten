@@ -218,6 +218,39 @@
     $effect(() => {
         up_displaytime()
     })
+    
+    let theone = {}
+    function up_displaytime(the) {
+        if (the && the != theone) return
+        the = theone = {}
+        setTimeout(() => up_displaytime(the), 166)
+        cuelets && 1
+        if (!(cuenow && cuenow.el)) return
+        let length = sel.out - sel.in
+        // a repeating time measure
+        let loop_startTime = cuenow.startTime - cuenow.intime
+        let loop_time = audioContext.currentTime - loop_startTime
+        displaytime = dec(loop_time)
+        let cue_time = audioContext.currentTime - cuenow.startTime
+        
+        is_cue_time_rolling(cue_time)
+
+
+
+        let cueswidth = cuenow.el.offsetWidth
+        let source = cuenow.source
+
+        let progress = cue_time / source.buffer.duration
+        let some_left = progress * cueswidth
+        let value = {
+            left: dec(cuenow.el.offsetLeft*1 + some_left*1),
+            top: dec(cuenow.el.offsetTop),
+        }
+        needlepos.set(value)
+        // console.log(`Cuestop: @ ${displaytime} \t${dec(progress)}\t${source.buffer.duration}dur wid${cueswidth}`,value)
+    }
+
+
     let last_cuetime = null
     let seem_not_to_play = 0
     let it_seems_not_to_play = $state(false)
@@ -237,36 +270,6 @@
     function start_from_gesture() {
         delete cuenow.source
         scheduleNextSound()
-    }
-    
-    let theone = {}
-    function up_displaytime(the) {
-        if (the && the != theone) return
-        the = theone = {}
-        setTimeout(() => up_displaytime(the), 166)
-        cuelets && 1
-        if (!(cuenow && cuenow.el)) return
-        let length = sel.out - sel.in
-        // a repeating time measure
-        let loop_startTime = cuenow.startTime - cuenow.intime
-        let loop_time = audioContext.currentTime - loop_startTime
-        displaytime = dec(loop_time)
-        let cue_time = audioContext.currentTime - cuenow.startTime
-        is_cue_time_rolling(cue_time)
-
-
-
-        let cueswidth = cuenow.el.offsetWidth
-        let source = cuenow.source
-
-        let progress = cue_time / source.buffer.duration
-        let some_left = progress * cueswidth
-        let value = {
-            left: dec(cuenow.el.offsetLeft*1 + some_left*1),
-            top: dec(cuenow.el.offsetTop),
-        }
-        needlepos.set(value)
-        // console.log(`Cuestop: @ ${displaytime} \t${dec(progress)}\t${source.buffer.duration}dur wid${cueswidth}`,value)
     }
 
 
