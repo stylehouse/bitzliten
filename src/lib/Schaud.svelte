@@ -239,8 +239,11 @@
         scheduleNextSound()
     }
     
-    function up_displaytime() {
-        setTimeout(() => up_displaytime(), 166)
+    let theone = {}
+    function up_displaytime(the) {
+        if (the && the != theone) return
+        the = theone = {}
+        setTimeout(() => up_displaytime(the), 166)
         cuelets && 1
         if (!(cuenow && cuenow.el)) return
         let length = sel.out - sel.in
@@ -250,6 +253,8 @@
         displaytime = dec(loop_time)
         let cue_time = audioContext.currentTime - cuenow.startTime
         is_cue_time_rolling(cue_time)
+
+
 
         let cueswidth = cuenow.el.offsetWidth
         let source = cuenow.source
