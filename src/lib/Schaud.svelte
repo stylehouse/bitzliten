@@ -211,32 +211,49 @@
 
 
     let needlepos = spring({left:0,top:0},{ 
-        stiffness: 0.5,
-        damping: 0.25,
+        stiffness: 0.6,
+        damping: 0.4,
     });
     let displaytime = $state(0)
     $effect(() => {
         up_displaytime()
     })
+    let last_cuetime = null
+    let seem_not_to_play = 0
+    let it_seems_not_to_play = $state(false)
+    function is_cue_time_rolling(cue_time) {
+        if (cue_time != last_cuetime) {
+            seem_not_to_play = 0
+            it_seems_not_to_play = false
+        }
+        else {
+            seem_not_to_play += 1
+            if (seem_not_to_play > 2) {
+                it_seems_not_to_play = true
+            }
+        }
+        last_cuetime = cue_time
+    }
+    function start_from_gesture() {
+        delete cuenow.source
+        scheduleNextSound()
+    }
+    
     function up_displaytime() {
-        setTimeout(() => up_displaytime(), 400)
+        setTimeout(() => up_displaytime(), 166)
         cuelets && 1
         if (!(cuenow && cuenow.el)) return
         let length = sel.out - sel.in
         // a repeating time measure
-        displaytime = dec(audioContext.currentTime % length)
+        let loop_startTime = cuenow.startTime - cuenow.intime
+        let loop_time = audioContext.currentTime - loop_startTime
+        displaytime = dec(loop_time)
+        let cue_time = audioContext.currentTime - cuenow.startTime
+        is_cue_time_rolling(cue_time)
 
-        // move needle
-        // let progress = 
-        // let loop_width = cueswidth * cuelets.length
-        // let loop_progress = displaytime / length
-        // let value = dec(loop_progress * loop_width,0)
-        
-        // make it about how far through this thing
         let cueswidth = cuenow.el.offsetWidth
         let source = cuenow.source
 
-        let cue_time = displaytime - cuenow.intime
         let progress = cue_time / source.buffer.duration
         let some_left = progress * cueswidth
         let value = {
@@ -244,7 +261,7 @@
             top: dec(cuenow.el.offsetTop),
         }
         needlepos.set(value)
-        console.log(`Cuestop: @ ${displaytime} \t${dec(progress)}\t${source.buffer.duration}dur wid${cueswidth}`,value)
+        // console.log(`Cuestop: @ ${displaytime} \t${dec(progress)}\t${source.buffer.duration}dur wid${cueswidth}`,value)
     }
 
 
@@ -268,16 +285,38 @@
         </soundbox>
     {/each}
 
-    <soundneedle style="left:{$needlepos.left}px;top:{$needlepos.top}px;">
-        <img src="pointer.webp" />
-    </soundneedle>
+    <needlebox>
+        <soundneedle style="left:{$needlepos.left}px;top:{$needlepos.top}px;">
+            <img src="pointer.webp" />
+        </soundneedle>
+    </needlebox>
+    {#if it_seems_not_to_play}
+        <bigdiv onclick={start_from_gesture}>click here</bigdiv>
+    {/if}
+
     </span>
 
 </div>
 
     <style>
+        bigdiv {
+            position:fixed;
+            opacity:0.5;
+            background-color:bisque;
+            border-radius: 1em;
+            width: 40%;
+            height: 40%;
+            top: 30%;
+        }
         div span {
             position:relative;
+        }
+        needlebox {
+            left:0px;
+            position:absolute;
+            overflow:hidden;
+            width: 100%;
+            height: 100%;
         }
         soundneedle {
             position:absolute;
@@ -285,7 +324,6 @@
             margin-top: -7em;
             margin-left: -7em;
             pointer-events:none;
-            overflow:hidden;
         }
         soundbox {
             width: 9em;
