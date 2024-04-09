@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { spring } from 'svelte/motion';
     import { fetch } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
 
@@ -141,6 +142,7 @@
             }
 
             // play
+            cuenow.startTime = audioContext.currentTime
             source.start(audioContext.currentTime);
 
             // crossfade to next
@@ -208,24 +210,41 @@
     }
 
 
-    let needlepos = $state(0)
+    let needlepos = spring({left:0,top:0},{ 
+        stiffness: 0.5,
+        damping: 0.25,
+    });
     let displaytime = $state(0)
     $effect(() => {
         up_displaytime()
     })
     function up_displaytime() {
-        setTimeout(() => up_displaytime(), 200)
+        setTimeout(() => up_displaytime(), 400)
         cuelets && 1
         if (!(cuenow && cuenow.el)) return
         let length = sel.out - sel.in
         // a repeating time measure
         displaytime = dec(audioContext.currentTime % length)
-        // move needle
-        let cueswidth = cuenow.el.offsetWidth
-        let loop_width = cueswidth * playlets.length
-        let loop_progress = displaytime / length
-        needlepos = dec(loop_progress * loop_width,0)
 
+        // move needle
+        // let progress = 
+        // let loop_width = cueswidth * cuelets.length
+        // let loop_progress = displaytime / length
+        // let value = dec(loop_progress * loop_width,0)
+        
+        // make it about how far through this thing
+        let cueswidth = cuenow.el.offsetWidth
+        let source = cuenow.source
+
+        let cue_time = displaytime - cuenow.intime
+        let progress = cue_time / source.buffer.duration
+        let some_left = progress * cueswidth
+        let value = {
+            left: dec(cuenow.el.offsetLeft*1 + some_left*1),
+            top: dec(cuenow.el.offsetTop),
+        }
+        needlepos.set(value)
+        console.log(`Cuestop: @ ${displaytime} \t${dec(progress)}\t${source.buffer.duration}dur wid${cueswidth}`,value)
     }
 
 
@@ -249,7 +268,7 @@
         </soundbox>
     {/each}
 
-    <soundneedle style="left:{needlepos}px">
+    <soundneedle style="left:{$needlepos.left}px;top:{$needlepos.top}px;">
         <img src="pointer.webp" />
     </soundneedle>
     </span>
