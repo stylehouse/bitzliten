@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { spring } from 'svelte/motion';
+    import { tweened } from 'svelte/motion';
     import { fetch } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
 
@@ -144,6 +144,7 @@
             // play
             cuenow.startTime = audioContext.currentTime
             source.start(audioContext.currentTime);
+            up_displaytime()
 
             // crossfade to next
             let cuenext = next_cuelet(cuenow)
@@ -209,52 +210,69 @@
         return oscillator
     }
 
-
-    let needlepos = spring({left:0,top:0},{ 
-        stiffness: 0.6,
-        damping: 0.4,
-    });
     let displaytime = $state(0)
     $effect(() => {
         up_displaytime()
     })
     
     let theone = {}
+    let has_tween = null
     function up_displaytime(the) {
         if (the && the != theone) return
         the = theone = {}
         setTimeout(() => up_displaytime(the), 166)
+
         cuelets && 1
         if (!(cuenow && cuenow.el)) return
+        
         let length = sel.out - sel.in
         // a repeating time measure
         let loop_startTime = cuenow.startTime - cuenow.intime
         let loop_time = audioContext.currentTime - loop_startTime
         displaytime = dec(loop_time)
         let cue_time = audioContext.currentTime - cuenow.startTime
+
+        check_time_is_passing(cue_time)
         
-        is_cue_time_rolling(cue_time)
+        needle_moves(cue_time)
+        
+    }
 
 
+
+    // this takes on the duration of the cuelet when .set()
+    let needle_left = tweened(0,{duration:0})
+    let needle_top = $state(0)
+    function needle_moves(cue_time) {
+        // do the rest once per cuenow
+        if (has_tween == cuenow) return
+        has_tween = cuenow
+
+        // we come here right after sound.start()
+        if (cue_time > 0.05) console.warn("long time to needle_moves: "+cue_time)
 
         let cueswidth = cuenow.el.offsetWidth
         let source = cuenow.source
+        let duration = source.buffer.duration
+        // let progress = cue_time / source.buffer.duration
+        // let some_left = progress * cueswidth
+        // let value = {
+        //     left: dec(cuenow.el.offsetLeft*1 + some_left*1),
+        //     top: dec(cuenow.el.offsetTop),
+        // }
+        // needlepos.set(value)
 
-        let progress = cue_time / source.buffer.duration
-        let some_left = progress * cueswidth
-        let value = {
-            left: dec(cuenow.el.offsetLeft*1 + some_left*1),
-            top: dec(cuenow.el.offsetTop),
-        }
-        needlepos.set(value)
-        // console.log(`Cuestop: @ ${displaytime} \t${dec(progress)}\t${source.buffer.duration}dur wid${cueswidth}`,value)
+        needle_left.set(cuenow.el.offsetLeft*1)
+        needle_left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
+        needle_top = cuenow.el.offsetTop
+        console.log(`Cuestop: @ ${displaytime} \t${dec(duration)}\t`)
     }
 
 
     let last_cuetime = null
     let seem_not_to_play = 0
     let it_seems_not_to_play = $state(false)
-    function is_cue_time_rolling(cue_time) {
+    function check_time_is_passing(cue_time) {
         if (cue_time != last_cuetime) {
             seem_not_to_play = 0
             it_seems_not_to_play = false
@@ -293,7 +311,7 @@
         </soundbox>
     {/each}
 
-    <soundneedle style="left:{$needlepos.left}px;top:{$needlepos.top}px;">
+    <soundneedle style="left:{$needle_left}px;top:{needle_top}px;">
         <img src="pointer.webp" />
     </soundneedle>
     {#if it_seems_not_to_play}
