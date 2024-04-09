@@ -98,7 +98,9 @@
     // handles wraparound
     function next_cuelet(cuelet) {
         let i = cuelets.indexOf(cuelet)
-        if (i < 0) throw "!cuelet"
+        if (i < 0) {
+            // is fine, will go back to the start when file changes
+        }
         return cuelets[i+1] || cuelets[0]
     }
 
@@ -113,72 +115,89 @@
     $effect(() => {
         if (ready) scheduleNextSound()
     })
-    let fadetime = 0.5
+    let fadetime = 1.5
     let upto = $state(0)
     let cuenow:null|adublet = null
     let theone = {}
     // we shall run this whenever a new cuelet needs to .source and .play()
     //  also runs at random other times
-    function scheduleNextSound(the) {
+    function scheduleNextSound(the?,c?) {
+        c ||= {}
         // dedupe callbacks to here
         if (the && the != theone) return
         the = theone = {}
         // on init
         cuenow ||= cuelets[0]
         if (!cuenow) throw "!cuenow"
+        // this shall remain the same for source.onended()'s callback
+        let cuelet = cuenow
         // one of these while playing
         if (!cuenow.source) {
             let source = cuenow.source = source_cuelet(cuenow)
 
+            // crossfade from last
+            if (c.fadein) {
+                source.fadein(c.fadein)
+            }
+
             // play
             source.start(audioContext.currentTime);
 
-            // crossfade
+            // crossfade to next
             let cuenext = next_cuelet(cuenow)
             if (cuenext.in < cuenow.out) {
                 // < how to get to the time to do it more reliably?
                 let left = source.buffer.duration - fadetime
                 setTimeout(() => {
-                    
-                },left)
+                    cuelet.source.fadeout(fadetime)
+                    cuenow = cuenext
+                    scheduleNextSound(null,{fadein:fadetime})
+                },left * 1000)
             }
 
+
             source.onended = () => {
-                delete cuenow.source
-                // cuenext will already be playing (has .source) if crossfading
+                // on the cuelet that was cuenow when it started playing
+                delete cuelet.source
+                // cuenext will already be cuenow and playing (has .source) if crossfading
+                if (cuenow != cuelet && cuenow != cuenext) debugger
                 cuenow = cuenext
                 scheduleNextSound(the);
             };
         }
 
-        let cuelet = cuenow
         upto = cuelet.in
         
 
-        console.log(`NextSound: ${cuelet.in}  ${cuelet.buffer.duration}`)
+        console.log(`NextSound: ${cuelet.in}  ${cuelet.buffer.duration} {cuenext.in} < {cuenow.out}`)
 
 
         console.log("Zourece",{
-            fadein: cuenow.source.fadein(5),
             sourcetime: cuenow.source.currentTime,
             time: audioContext.currentTime,
         })
 
     }
+    type asource = AudioBufferSourceNode & {fadein:Function,fadeout:Function}
     function source_cuelet(cuelet:adublet) {
         let source = audioContext.createBufferSource();
         source.buffer = cuelet.buffer;
 
 
         // Create a gain node to control the volume
-        const gainNode = audioContext.createGain();
-        source.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        const gain = audioContext.createGain();
+        source.connect(gain);
+        gain.connect(audioContext.destination);
 
         // < fades
-        source.fadein = (n) => n * 3
+        let fade = (suddenly,thence,fadetime) => {
+            gain.gain.setValueAtTime(suddenly, audioContext.currentTime);
+            gain.gain.linearRampToValueAtTime(thence, audioContext.currentTime + fadetime);
+        }
+        source.fadein = (fadetime) => fade(0,1,fadetime)
+        source.fadeout = (fadetime) => fade(1,0,fadetime)
 
-        return source
+        return source:asource
     }
     function oscil() {
         const oscillator = audioContext.createOscillator();
