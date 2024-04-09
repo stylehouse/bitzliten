@@ -221,13 +221,21 @@
         aria-dropeffect="execute"
         style="border: 2px dashed #ccc; padding: 20px; text-align: center;"
     >
+        {#if playlets.length}
+            loaded
+        {:else}
+            <p>
+                Drag and drop an audio file here
+            </p>
+        {/if}
         
+    </div>
+    <div>
         {#if playlets.length}
             <Schaud {playlets} />
         {:else}
             <p>
-                Drag and drop an audio file here to transcode to 40kbps Opus
-                format.
+                ...
             </p>
         {/if}
 
@@ -264,5 +272,8 @@
     }
     div.drop-zone {
         padding: 3em
+    }
+    div {
+        text-align: center;
     }
 </style>

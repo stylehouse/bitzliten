@@ -320,7 +320,7 @@
         soundbox {
             width: 9em;
             height: 6em;
-            background-color:bisque;
+            background-color:rgb(70, 82, 43);
             border-radius: 1em;
             display: inline-block;
         }
