@@ -101,7 +101,9 @@
         if (i < 0) {
             // is fine, will go back to the start when file changes
         }
-        return cuelets[i+1] || cuelets[0]
+        let one = cuelets[i+1] || cuelets[0]
+        if (!one) throw "no next!"
+        return one
     }
 
 
@@ -204,6 +206,29 @@
         oscillator.frequency.value = 260;
         return oscillator
     }
+
+
+    let needlepos = $state(0)
+    let displaytime = $state(0)
+    $effect(() => {
+        up_displaytime()
+    })
+    function up_displaytime() {
+        setTimeout(() => up_displaytime(), 200)
+        cuelets && 1
+        if (!(cuenow && cuenow.el)) return
+        let length = sel.out - sel.in
+        // a repeating time measure
+        displaytime = dec(audioContext.currentTime % length)
+        // move needle
+        let cueswidth = cuenow.el.offsetWidth
+        let loop_width = cueswidth * playlets.length
+        let loop_progress = displaytime / length
+        needlepos = dec(loop_progress * loop_width,0)
+
+    }
+
+
     // round number
     function dec(s,places=4) {
         s = s*1
@@ -212,9 +237,47 @@
     }
 </script>
 
-<div>*audio* {upto}</div>
+<div>*audio* {upto}:
+     <!-- {displaytime} -->
+    </div>
+<div>
+    <span>
+    {#each cuelets as cuelet (cuelet.in)}
+        <soundbox 
+            bind:this={cuelet.el} >
+            www
+        </soundbox>
+    {/each}
+
+    <soundneedle style="left:{needlepos}px">
+        <img src="pointer.webp" />
+    </soundneedle>
+    </span>
+
+</div>
 
     <style>
+        div span {
+            position:relative;
+        }
+        soundneedle {
+            position:absolute;
+            mix-blend-mode: color-dodge;
+            margin-top: -7em;
+            margin-left: -7em;
+            pointer-events:none;
+            overflow:hidden;
+        }
+        soundbox {
+            width: 9em;
+            height: 6em;
+            background-color:bisque;
+            border-radius: 1em;
+            display: inline-block;
+        }
+        soundbox.cuenow {
+            background-color:lightblue;
+        }
         div {
             border: 3px solid rgb(25, 77, 28);
             border-radius: 3em;
