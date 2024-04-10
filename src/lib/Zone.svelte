@@ -123,7 +123,8 @@
         let needs = playlets.filter(playlet => !playlet.ideal_dub)
         // let needs = undublets()
         console.log("letsgo() nublets:",needs)
-        needs.map(joblet => go_ffmpeg(joblet))
+        let joblet = needs.shift()
+        go_ffmpeg(joblet)
     }
     
     
