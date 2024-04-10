@@ -256,14 +256,28 @@
     }
 
     // tween takes on the duration of the cuelet when .set()
-    let needle_left = tweened(0,{duration:0})
-    let needle_top = $state(0)
+    let needles = [
+        {id: 0,
+         left: tweened(0,{duration:0}),
+         top: $state(0),
+         opacity: tweened(0,{duration:0})
+        },
+        {id: 1,
+         left: tweened(0,{duration:0}),
+         top: $state(0),
+         opacity: tweened(0,{duration:0})
+        },
+    ]
+
     function needle_moves(cue_time) {
         // occasionally generate bad data from ffmpeg, eg if seek > file length
         if (!cuenow.source.buffer) return
         // do the rest once per cuenow
         if (has_tween == cuenow) return
         has_tween = cuenow
+        // 1-2 needles exist
+        let needle = cuenow.needle
+        if (!needle) throw '!needle'
 
         // we come here right after sound.start()
         if (cue_time > 0.05) console.warn("long time to needle_moves: "+cue_time)
@@ -279,9 +293,11 @@
         // }
         // needlepos.set(value)
 
-        needle_left.set(cuenow.el.offsetLeft*1 + cueswidth*progress)
-        needle_left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
-        needle_top = cuenow.el.offsetTop
+        needle.opacity.set(0)
+        needle.opacity.set(1,{duration:0.2*1000})
+        needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*progress)
+        needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
+        needle.top = cuenow.el.offsetTop
         console.log(`Cuestop: @ ${displaytime} \t${dec(duration)}\t`)
     }
 
@@ -351,12 +367,22 @@
             &nbsp; {cuelet_info(cuelet)}
         </soundbox>
     {/each}
+    
+    {#each needles as ne (ne.id)}
+        <soundneedle transition:scale style="
+            {ne.id == 1 ? 'filter:flipX(2);' : ''}
+            left:{$ne.left}px;
+            top:{ne.top}px;
+            opacity:{ne.opacity}px;
+            ">
+            <img src="pointer.webp" />
+        </soundneedle>
+    {/each}
 
-    <soundneedle style="left:{$needle_left}px;top:{needle_top}px;">
-        <img src="pointer.webp" />
-    </soundneedle>
     {#if it_seems_not_to_play}
-        <bigdiv onclick={start_from_gesture}><h1>click here</h1> audio playback requires interaction</bigdiv>
+        <bigdiv transition:scale onclick={start_from_gesture}>
+            <h1>click here</h1> audio playback requires interaction
+        </bigdiv>
     {/if}
 
     </span>
