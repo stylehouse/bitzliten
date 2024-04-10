@@ -3,7 +3,7 @@
     import { fetch } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
 
-    let {playlets} = $props()
+    let {playlets,needle_uplink} = $props()
     // figures approach,
     let cuelets = $state([])
     // the firstmost in and lastmost out of playlets
@@ -121,8 +121,10 @@
         if (ready) scheduleNextSound()
     })
     function thump_machinery() {
+        if (cuenow && cuenow.source) delete cuenow.source
         cuenow = null
         ready = ready + 1
+        scheduleNextSound()
     }
     let fadetime = 1.5
     let upto = $state(0)
@@ -242,7 +244,14 @@
         check_time_is_passing(cue_time)
         
         needle_moves(cue_time)
-        
+    }
+
+    needle_uplink.stat = () => {
+        if (!cuenow || !cuenow.buffer) return {}
+        let duration = cuenow.buffer.duration
+        let cue_time = audioContext.currentTime - cuenow.startTime
+        let remains = duration - cue_time
+        return {cuenow,remains,cue_time,duration}
     }
 
 

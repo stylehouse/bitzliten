@@ -2,6 +2,7 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
 import { fetchFile, toBlobURL } from './not-ffmpeg-util';
 
+export let now = () => new Date().getTime() / 1000
 export async function fetch(url) {
     return await fetchFile(url)
 }

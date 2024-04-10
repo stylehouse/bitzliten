@@ -1,5 +1,5 @@
 <script lang="ts" module>
-    import { FFgemp } from "./FFgemp"
+    import { FFgemp,now } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet } from "./FFgemp"
     import Knob from "./Knob.svelte";
     // with <audio> is awkward. maybe somewhere?
@@ -121,10 +121,9 @@
         update_playlets()
         // find gapos
         let needs = playlets.filter(playlet => !playlet.ideal_dub)
-        // let needs = undublets()
+        prioritise_needs(needs)
         console.log("letsgo() nublets:",needs)
-        let joblet = needs.shift()
-        go_ffmpeg(joblet)
+        needs[0] && go_ffmpeg(needs[0])
     }
     
     
@@ -212,37 +211,48 @@
 
     let latest_cmd = $state('')
     let pending = false
+    let last_job_time = null
     async function go_ffmpeg(joblet:adublet) {
         if (pending) return
         pending = true
 
         latest_cmd = joblet.modes_json
+        let job_start_ts = now()
         let result = await FF.transcode(file,joblet.modes)
         joblet.objectURL = URL.createObjectURL(result)
         dublets.push(joblet)
+        last_job_time = now() - job_start_ts
 
         // back to deciding whether to do anything
         setTimeout(() => letsgo(),0)
 
         if (message == 'Aborted()') {
-            message = 'done'
+            message = 'done in '+last_job_time+'s'
         }
         pending = false
     }
     
+    // < detect and diag about not being allowed to .play() sound
 
-
-    let playerel = $state()
-    $effect(async () => {
-        if (!playerel) return
-        try { await playerel.play() }
-        catch (er) {
-            if (er.name == "NotAllowedError") return
-            throw er
+    // talk to cuelet playing now
+    let needle_uplink = {}
+    // rearrange joblist so the first is soonest played
+    function prioritise_needs(needs) {
+        if (!needs[0] || !needle_uplink.stat) return
+        let {cuenow,remains} = needle_uplink.stat()
+        if (!cuenow) return
+        
+        // wind needs around to where we are
+        let many = needs.length
+        while (needs[0].out < cuenow.out) {
+            if (many-- < 0) break
+            needs.push(needs.shift())
         }
-    })
-
-    
+        // and maybe just hop to the next one if soon
+        if (remains < last_job_time+0.2) {
+            needs.push(needs.shift())
+        }
+    }
 
     
 
@@ -277,7 +287,7 @@
     </div>
     <div>
         {#if playlets.length}
-            <Schaud {playlets} />
+            <Schaud {playlets} {needle_uplink}/>
         {:else}
             <p>
                 ...
