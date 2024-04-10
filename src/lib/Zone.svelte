@@ -1,5 +1,5 @@
 <script lang="ts" module>
-    import { FFgemp,now } from "./FFgemp"
+    import { FFgemp,now,dec } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet } from "./FFgemp"
     import Knob from "./Knob.svelte";
     // with <audio> is awkward. maybe somewhere?
@@ -227,7 +227,7 @@
         setTimeout(() => letsgo(),0)
 
         if (message == 'Aborted()') {
-            message = 'done in '+last_job_time+'s'
+            message = 'done in '+dec(last_job_time,3)+'s'
         }
         pending = false
     }

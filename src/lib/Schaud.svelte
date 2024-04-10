@@ -1,6 +1,6 @@
 <script lang="ts">
     import { tweened } from 'svelte/motion';
-    import { fetch } from "./FFgemp"
+    import { fetch,dec } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
 
     let {playlets,needle_uplink} = $props()
@@ -335,12 +335,6 @@
     }
 
 
-    // round number
-    function dec(s,places=4) {
-        s = s*1
-        if (isNaN(s)) throw "ohno"
-        return s.toFixed(places) * 1
-    }
 </script>
 
 <div>*audio* {upto}:

@@ -3,6 +3,12 @@ import type { LogEvent } from '@ffmpeg/ffmpeg/dist/esm/types';
 import { fetchFile, toBlobURL } from './not-ffmpeg-util';
 
 export let now = () => new Date().getTime() / 1000
+// round number
+export function dec(s,places=4) {
+    s = s*1
+    if (isNaN(s)) throw "ohno"
+    return s.toFixed(places) * 1
+}
 export async function fetch(url) {
     return await fetchFile(url)
 }
