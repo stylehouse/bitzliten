@@ -43,6 +43,8 @@
 
     // the selection
     let sel = $state({})
+    // push|pull their modes/seek|length representation
+    let sel_dominant = true
 
     // size in seconds to encode at a time (a dublet)
     let chunk_length = 2
@@ -53,13 +55,49 @@
     let playlets:Array<adublet> = $state([])
     
     // reset per file
+    let last_file
     $effect(() => {
-        if (file) {
+        if (file && file != last_file) {
             sel = {in:10,out:20}
+            sel_dominant = true
             dublets = []
             playlets = []
+            last_file = file
         }
     })
+    // ~sel -> modes
+    $effect(() => {
+        console.log("~sel ",sel)
+    })
+
+
+    // sel <-> modes
+    // called from letsgo(), so we have modes[]
+    function update_sel() {
+        if (sel_dominant) {
+            // push to modes, during the 
+            sel_to_modes()
+            sel_dominant = false
+        }
+        else {
+            // user changes to modes should become sel, which shapes playlets
+            modes_to_sel()
+        }
+    }
+    function sel_to_modes() {
+        console.log("sel_to_modes()")
+        let seek = find_t_in_N(modes,'seek')
+        seek.s = sel.in
+        let length = find_t_in_N(modes,'length')
+        length.s = sel.out - sel.in
+    }
+    function modes_to_sel() {
+        console.log("modes_to_sel()")
+        let seek = find_t_in_N(modes,'seek')
+        sel.in = seek.s
+        let length = find_t_in_N(modes,'length')
+        sel.out = seek.s + length.s
+    }
 
     // two paths of config change notification:
     // mutation inside ~modes (via Knob twiddles) or ~file -> processing
@@ -76,6 +114,9 @@
 
     function letsgo() {
         if (sel.in == null) return []
+        // update sel
+        update_sel()
+
         // make view of what to play
         update_playlets()
         // find gapos
@@ -84,6 +125,7 @@
         console.log("letsgo() nublets:",needs)
         needs.map(joblet => go_ffmpeg(joblet))
     }
+    
     
     // generate a bunch of tiles for your ears to walk on
     function update_playlets() {
@@ -167,11 +209,13 @@
         })
     }
 
+    let latest_cmd = $state('')
     let pending = false
     async function go_ffmpeg(joblet:adublet) {
         if (pending) return
         pending = true
 
+        latest_cmd = joblet.modes_json
         let result = await FF.transcode(file,joblet.modes)
         joblet.objectURL = URL.createObjectURL(result)
         dublets.push(joblet)
@@ -257,6 +301,9 @@
             {#if pending}<mode>PENDING</mode>{/if}
         {/if}
     </div>
+    {#if latest_cmd.length}
+        <p>{latest_cmd}</p>
+    {/if}
 </main>
 <style>
     p {

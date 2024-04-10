@@ -126,6 +126,8 @@
     function scheduleNextSound(c?) {
         c ||= {}
         let remarks = []
+        // some weird time to avoid.
+        if (!cuelets[0]) return
         // on init
         cuenow ||= cuelets[0]
         if (!cuenow) throw "!cuenow"
@@ -212,6 +214,7 @@
 
     let displaytime = $state(0)
     $effect(() => {
+        cuenow
         up_displaytime()
     })
     
@@ -240,10 +243,11 @@
 
 
 
-    // this takes on the duration of the cuelet when .set()
+    // tween takes on the duration of the cuelet when .set()
     let needle_left = tweened(0,{duration:0})
     let needle_top = $state(0)
     function needle_moves(cue_time) {
+        if (!cuenow.source.buffer) return
         // do the rest once per cuenow
         if (has_tween == cuenow) return
         has_tween = cuenow
