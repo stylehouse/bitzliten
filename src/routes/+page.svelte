@@ -10,6 +10,7 @@
 	:global(body) {
 		background-color: #1d3040;
 		color: #bfc2c7;
+        overflow: hidden;
 	}
     :global(button) {
 		background-color: #26747e;

@@ -58,7 +58,7 @@
     let last_file
     $effect(() => {
         if (file && file != last_file) {
-            sel = {in:10,out:20}
+            sel = {in:10,out:16}
             sel_dominant = true
             dublets = []
             playlets = []

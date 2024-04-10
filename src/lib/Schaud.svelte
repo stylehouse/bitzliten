@@ -129,6 +129,7 @@
     }
     let fadetime = 1.5
     let upto = $state(0)
+    type acuelet = adublet & {startTime:number,source,needle,el}
     let cuenow:null|adublet = null
     // we shall run this whenever a new cuelet needs to .source and .play()
     //  also runs at random other times
@@ -147,6 +148,8 @@
             remarks.push("new")
             let source = cuenow.source = source_cuelet(cuenow)
 
+            // this will find the same one unless crossfading
+            let needle = cuenow.needle = find_unused_needle()
             // crossfade from last
             if (c.fadein) {
                 source.fadein(c.fadein)
@@ -156,14 +159,20 @@
             cuenow.startTime = audioContext.currentTime
             source.start(audioContext.currentTime);
             up_displaytime()
+            if (c.fadein) {
+                // clobber the default opacity tween to match the fadetime
+                needle.opacity.set(0)
+                needle.opacity.set(1,{duration:fadetime*1000})
+            }
 
             // crossfade to next
             let cuenext = next_cuelet(cuenow)
             if (cuenext.in != cuenow.out) {
-                // < how to get to the time to do it more reliably?
+                // discontinuity, probably from looping
                 let left = source.buffer.duration - fadetime
                 setTimeout(() => {
                     cuelet.source.fadeout(fadetime)
+                    needle.opacity.set(0,{duration:fadetime*1000})
                     cuenow = cuenext
                     scheduleNextSound({fadein:fadetime})
                 },left * 1000)
@@ -173,6 +182,7 @@
             source.onended = () => {
                 // on the cuelet that was cuenow when it started playing
                 delete cuelet.source
+                delete cuelet.needle
                 // cuenext will already be cuenow and playing (has .source) if crossfading
                 if (cuelet == cuenow) {
                     // nobody else (crossfading, ~cuelets) has altered cuenow since we started
@@ -184,6 +194,8 @@
 
         upto = cuelet.in
         
+        if (!cuelets.includes(cuenow)) remarks.push("!in")
+        if (cuenow.needle) remarks.push("ne:"+cuenow.needle.id)
 
         console.log(`NextSound: ${cuelet.in}  ${dec(audioContext.currentTime)}  ${remarks.join("  ")}`)
 
@@ -256,18 +268,34 @@
     }
 
     // tween takes on the duration of the cuelet when .set()
+    let ne0top = $state(0)
+    let ne0left = tweened(0,{duration:0})
+    let ne0opacity = tweened(0,{duration:0})
+    let ne1top = $state(0)
+    let ne1left = tweened(0,{duration:0})
+    let ne1opacity = tweened(0,{duration:0})
     let needles = [
         {id: 0,
-         left: tweened(0,{duration:0}),
-         top: $state(0),
-         opacity: tweened(0,{duration:0})
+         left: ne0left,
+         top: ne0top,
+         opacity: ne0opacity,
         },
         {id: 1,
-         left: tweened(0,{duration:0}),
-         top: $state(0),
-         opacity: tweened(0,{duration:0})
+         left: ne1left,
+         top: ne1top,
+         opacity: ne1opacity,
         },
     ]
+    function find_unused_needle() {
+        // there are only two
+        let is_used = (ne) => cuelets.some(cuelet => cuelet.needle == ne)
+        if (is_used(needles[0])) console.log("Needle is used: "+needles[0].id)
+        if (is_used(needles[0])) needles.reverse()
+        if (is_used(needles[0])) debugger
+        let ne = needles[0]
+        if (!ne) debugger
+        return ne
+    }
 
     function needle_moves(cue_time) {
         // occasionally generate bad data from ffmpeg, eg if seek > file length
@@ -277,6 +305,7 @@
         has_tween = cuenow
         // 1-2 needles exist
         let needle = cuenow.needle
+        if (!needle) return
         if (!needle) throw '!needle'
 
         // we come here right after sound.start()
@@ -293,7 +322,7 @@
         // }
         // needlepos.set(value)
 
-        needle.opacity.set(0)
+        // needle.opacity.set(0)
         needle.opacity.set(1,{duration:0.2*1000})
         needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*progress)
         needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
@@ -368,16 +397,21 @@
         </soundbox>
     {/each}
     
-    {#each needles as ne (ne.id)}
-        <soundneedle transition:scale style="
-            {ne.id == 1 ? 'filter:flipX(2);' : ''}
-            left:{$ne.left}px;
-            top:{ne.top}px;
-            opacity:{ne.opacity}px;
+        <soundneedle style="
+            transform: scaleX(-1);
+            left:{$ne0left}px;
+            top:{ne0top}px;
+            opacity:{dec($ne0opacity,3)};
             ">
             <img src="pointer.webp" />
         </soundneedle>
-    {/each}
+        <soundneedle style="
+            left:{$ne1left}px;
+            top:{ne1top}px;
+            opacity:{dec($ne1opacity,3)};
+            ">
+            <img src="pointer.webp" />
+        </soundneedle>
 
     {#if it_seems_not_to_play}
         <bigdiv transition:scale onclick={start_from_gesture}>
