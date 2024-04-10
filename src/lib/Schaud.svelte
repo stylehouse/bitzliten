@@ -87,13 +87,15 @@
         cuelet.outtime = cuelet.out - sel.in;
     }
     // convert objectURL to buffer
+    // we can start playing cuelets before they all have
     async function decodeAudio(cuelet) {
         if (!cuelet.objectURL) return
         let buf = await fetch(cuelet.objectURL)
         // our fetch() returns a Uint8Array!
         let res = new Response(buf)
         let blob = await res.arrayBuffer()
-        // we can start playing cuelets before they all have:
+        // < flipping the order of these next two lines always makes .blob_size=0 wtf
+        cuelet.blob_size = blob.byteLength
         cuelet.buffer = await audioContext.decodeAudioData(blob)
     }
     // handles wraparound
@@ -118,6 +120,10 @@
     $effect(() => {
         if (ready) scheduleNextSound()
     })
+    function thump_machinery() {
+        cuenow = null
+        ready = ready + 1
+    }
     let fadetime = 1.5
     let upto = $state(0)
     let cuenow:null|adublet = null
@@ -165,10 +171,8 @@
                 // on the cuelet that was cuenow when it started playing
                 delete cuelet.source
                 // cuenext will already be cuenow and playing (has .source) if crossfading
-                //  this may trigger if we get >1 cuelet ahead of now somehow
-                if (cuenow != cuelet && cuenow != cuenext) debugger
                 if (cuelet == cuenow) {
-                    // nobody else (crossfading) has altered cuenow since we started
+                    // nobody else (crossfading, ~cuelets) has altered cuenow since we started
                     cuenow = cuenext
                     scheduleNextSound();
                 }
@@ -247,6 +251,7 @@
     let needle_left = tweened(0,{duration:0})
     let needle_top = $state(0)
     function needle_moves(cue_time) {
+        // occasionally generate bad data from ffmpeg, eg if seek > file length
         if (!cuenow.source.buffer) return
         // do the rest once per cuenow
         if (has_tween == cuenow) return
@@ -294,6 +299,28 @@
         scheduleNextSound()
     }
 
+    function cuelet_class(cuelet) {
+        return cuelet.buffer ? '' : 'unbuffered'
+    }
+    function cuelet_info(cuelet) {
+        let msg = []
+        // .buffer is decoded audio, .source while playing it
+        if (!cuelet.buffer) {
+            msg.push("!buffer")
+        }
+        else if (cuelet.buffer.length < 2000) {
+            // very small buffer is likely bad data
+            // occasionally generate bad data from ffmpeg, eg if seek > file length
+            msg.push(`buffer(${cuelet.buffer.length})`)
+        }
+        else {
+            let Bps = cuelet.blob_size / cuelet.buffer.duration
+            let kbps = dec(Bps*8 / 1000,2)
+            msg.push(`${kbps}k`)
+        }
+        return msg.join(" - ")
+    }
+
 
     // round number
     function dec(s,places=4) {
@@ -308,10 +335,12 @@
     </div>
 <div>
     <span>
+        <button onclick={thump_machinery}>thump</button>
     {#each cuelets as cuelet (cuelet.in)}
         <soundbox 
+            class={cuelet_class(cuelet)}
             bind:this={cuelet.el} >
-            www
+            &nbsp; {cuelet_info(cuelet)}
         </soundbox>
     {/each}
 
@@ -351,8 +380,12 @@
             width: 9em;
             height: 6em;
             background-color:rgb(70, 82, 43);
+            color: black;
             border-radius: 1em;
             display: inline-block;
+        }
+        soundbox.unbuffered {
+            background-color:rgb(40, 46, 25);
         }
         soundbox.cuenow {
             background-color:lightblue;
