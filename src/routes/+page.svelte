@@ -11,4 +11,8 @@
 		background-color: #1d3040;
 		color: #bfc2c7;
 	}
+    :global(button) {
+		background-color: #26747e;
+        border-radius: 0.8em;
+    }
 </style>

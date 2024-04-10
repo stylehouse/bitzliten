@@ -316,7 +316,11 @@
         else {
             let Bps = cuelet.blob_size / cuelet.buffer.duration
             let kbps = dec(Bps*8 / 1000,2)
-            msg.push(`${kbps}k`)
+            // this isn't so accurate I think
+            //  and complicates the UI
+            // < getting ffmpeg to read the output file and tell us
+            //    involves parsing its output which I've done in python
+            // msg.push(`${kbps}k`)
         }
         return msg.join(" - ")
     }
