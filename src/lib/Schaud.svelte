@@ -1,5 +1,6 @@
 <script lang="ts">
     import { tweened } from 'svelte/motion';
+	import { fade,scale } from 'svelte/transition';
     import { fetch,dec } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
 
@@ -226,6 +227,7 @@
     
     let theone = {}
     let has_tween = null
+    let audio_state = ''
     function up_displaytime(the) {
         if (the && the != theone) return
         the = theone = {}
@@ -242,8 +244,7 @@
         let cue_time = audioContext.currentTime - cuenow.startTime
 
         check_time_is_passing(cue_time)
-        
-        needle_moves(cue_time)
+        if (audioContext.state == 'running') needle_moves(cue_time)
     }
 
     needle_uplink.stat = () => {
@@ -253,8 +254,6 @@
         let remains = duration - cue_time
         return {cuenow,remains,cue_time,duration}
     }
-
-
 
     // tween takes on the duration of the cuelet when .set()
     let needle_left = tweened(0,{duration:0})
@@ -272,7 +271,7 @@
         let cueswidth = cuenow.el.offsetWidth
         let source = cuenow.source
         let duration = source.buffer.duration
-        // let progress = cue_time / source.buffer.duration
+        let progress = cue_time / source.buffer.duration
         // let some_left = progress * cueswidth
         // let value = {
         //     left: dec(cuenow.el.offsetLeft*1 + some_left*1),
@@ -280,7 +279,7 @@
         // }
         // needlepos.set(value)
 
-        needle_left.set(cuenow.el.offsetLeft*1)
+        needle_left.set(cuenow.el.offsetLeft*1 + cueswidth*progress)
         needle_left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
         needle_top = cuenow.el.offsetTop
         console.log(`Cuestop: @ ${displaytime} \t${dec(duration)}\t`)
@@ -339,12 +338,14 @@
 
 <div>*audio* {upto}:
      <!-- {displaytime} -->
+     {audio_state}
     </div>
 <div>
     <span>
         <button onclick={thump_machinery}>thump</button>
     {#each cuelets as cuelet (cuelet.in)}
         <soundbox 
+            transition:scale
             class={cuelet_class(cuelet)}
             bind:this={cuelet.el} >
             &nbsp; {cuelet_info(cuelet)}
@@ -355,7 +356,7 @@
         <img src="pointer.webp" />
     </soundneedle>
     {#if it_seems_not_to_play}
-        <bigdiv onclick={start_from_gesture}>click here</bigdiv>
+        <bigdiv onclick={start_from_gesture}><h1>click here</h1> audio playback requires interaction</bigdiv>
     {/if}
 
     </span>
@@ -372,6 +373,7 @@
             height: 40%;
             left: 30%;
             top: 30%;
+            color: red;
         }
         div span {
             position:relative;
