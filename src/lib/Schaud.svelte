@@ -170,6 +170,7 @@
             if (cuenext.in != cuenow.out) {
                 // discontinuity, probably from looping
                 let left = source.buffer.duration - fadetime
+                remarks.push("crossfade in "+left)
                 setTimeout(() => {
                     cuelet.source.fadeout(fadetime)
                     needle.opacity.set(0,{duration:fadetime*1000})
@@ -180,6 +181,7 @@
 
 
             source.onended = () => {
+                console.log(`Ends ${cuelet.in} ne:${needle.id}`,cuelets.map(cu => cu.needle))
                 // on the cuelet that was cuenow when it started playing
                 delete cuelet.source
                 delete cuelet.needle
@@ -288,7 +290,9 @@
     ]
     function find_unused_needle() {
         // there are only two
-        let is_used = (ne) => cuelets.some(cuelet => cuelet.needle == ne)
+        // < it seems we can't compare needle==needle, because they are different proxy objects?
+        let used = cuelets.map(cuelet => cuelet.needle?.id)
+        let is_used = (ne) => used.includes(ne.id)
         if (is_used(needles[0])) console.log("Needle is used: "+needles[0].id)
         if (is_used(needles[0])) needles.reverse()
         if (is_used(needles[0])) debugger
@@ -327,7 +331,7 @@
         needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*progress)
         needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
         needle.top = cuenow.el.offsetTop
-        console.log(`Cuestop: @ ${displaytime} \t${dec(duration)}\t`)
+        console.log(`Cuestop: @ ${displaytime} \t${progress} of ${dec(duration)}\t`)
     }
 
 
@@ -396,12 +400,15 @@
             &nbsp; {cuelet_info(cuelet)}
         </soundbox>
     {/each}
-    
+    <!-- 
+             -->
         <soundneedle style="
-            transform: scaleX(-1);
             left:{$ne0left}px;
             top:{ne0top}px;
             opacity:{dec($ne0opacity,3)};
+
+            transform: scaleX(-1);
+            margin-left: -18em;
             ">
             <img src="pointer.webp" />
         </soundneedle>
