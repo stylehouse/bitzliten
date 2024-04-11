@@ -332,6 +332,10 @@
         needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
         needle.top = cuenow.el.offsetTop
         console.log(`Cuestop: @ ${displaytime} \t${progress} of ${dec(duration)}\t`)
+
+        // here we can keep the needle at 0 to align new sprites
+        //  ie where in the image of the pointer (hand) the point (fingertip) is
+        // needle.left.set(0)
     }
 
 
@@ -407,10 +411,14 @@
             top:{ne0top}px;
             opacity:{dec($ne0opacity,3)};
 
-            transform: scaleX(-1);
-            margin-left: -18em;
             ">
-            <img src="pointer.webp" />
+            <span style="
+            position:absolute;
+            transform: scaleX(-1);
+            margin-left: -13em;
+            ">
+                <img src="pointer.webp" alt="big old hand"/>
+            </span>
         </soundneedle>
         <soundneedle style="
             left:{$ne1left}px;
@@ -449,7 +457,7 @@
             position:absolute;
             mix-blend-mode: color-dodge;
             margin-top: -7em;
-            margin-left: -7em;
+            margin-left: -6em;
             pointer-events:none;
         }
         soundbox {
