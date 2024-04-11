@@ -4,6 +4,7 @@
     import { fetch,dec } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
     import Pointer from './Pointer.svelte';
+    import Knob from './Knob.svelte';
 
     let {playlets,needle_uplink} = $props()
     // figures approach,
@@ -289,7 +290,6 @@
         let used = cuelets.map(cuelet => cuelet.needle?.id)
         let is_used = (ne) => used.includes(ne.id)
         let ne = needles[whichneedle]
-        if (is_used(ne)) console.log("Needle is used: "+ne.id)
         if (is_used(ne)) whichneedle = whichneedle == 0 ? 1 : 0
         ne = needles[whichneedle]
         if (!ne) debugger
@@ -326,7 +326,7 @@
         needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*progress)
         needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
         needle.top = cuenow.el.offsetTop
-        console.log(`Cuestop: @ ${displaytime} \t${progress} of ${dec(duration)}\t`)
+        // console.log(`needle_moves: @ ${displaytime} \t${progress} of ${dec(duration)}\t`)
 
         // here we can keep the needle at 0 to align new sprites
         //  ie where in the image of the pointer (hand) the point (fingertip) is
@@ -380,6 +380,17 @@
         }
         return msg.join(" - ")
     }
+    let selin = $state()
+    let selout = $state()
+    let selmo = $state()
+    let sel_adjustable = false
+    $effect(() => {
+        if (sel?.out) {
+            sel_adjustable = true
+            selin = sel.in
+            selout = sel.out
+        }
+    })
 
 
 </script>
@@ -390,15 +401,39 @@
     </div>
 <div>
     <span>
-        <button onclick={thump_machinery}>thump</button>
-    {#each cuelets as cuelet (cuelet.in)}
-        <soundbox 
-            transition:scale
-            class={cuelet_class(cuelet)}
-            bind:this={cuelet.el} >
-            &nbsp; {cuelet_info(cuelet)}
-        </soundbox>
-    {/each}
+        <span>
+            <button onclick={thump_machinery}>thump</button>
+            {#if sel_adjustable}
+                <span>
+                    in
+                    <Knob min={sel.in-10} max={sel.in+10} 
+                    bind:value={selin} ></Knob>
+                    move
+                    <Knob min={sel.in-10} max={sel.in+10} 
+                    bind:value={selmo} ></Knob>
+                </span>
+            {/if}
+        </span>
+
+        {#each cuelets as cuelet (cuelet.in)}
+            <soundbox 
+                transition:scale
+                class={cuelet_class(cuelet)}
+                bind:this={cuelet.el} >
+                &nbsp; {cuelet_info(cuelet)}
+            </soundbox>
+        {/each}
+
+        <span>
+            {#if sel_adjustable}
+                <span>
+                    out
+                    <Knob min={sel.out-10} max={sel.out+10} 
+                    bind:value={selout} ></Knob>
+                </span>
+            {/if}
+        </span>
+        
     <!-- 
              -->
     

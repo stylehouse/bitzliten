@@ -145,18 +145,18 @@
     // playlet // dublet
     function find_dub(nublet) {
         // try to match the whole of modes
-        let ideal = dublets.filter(dublet => {
-            return dublet.modes_json == nublet.modes_json
-        })[0]
+        let ideal = dublets.find(
+            dublet => dublet.modes_json == nublet.modes_json
+        )
         if (ideal) {
             nublet.ideal_dub = ideal
         }
         else {
             // settle for any playable instance of that time
             //  for Player to prefer an out-moded bitrate over dead air
-            let vague = dublets.filter(dublet => {
-                return dublet.in == nublet.in && dublet.out == nublet.out
-            })[0]
+            let vague = dublets.find(
+                dublet => dublet.in == nublet.in && dublet.out == nublet.out
+            )
             if (vague) {
                 nublet.vague_dub = vague
             }
