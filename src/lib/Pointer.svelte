@@ -1,0 +1,45 @@
+<script lang="ts">
+    import { tweened } from 'svelte/motion';
+    import { dec } from './FFgemp';
+    let {ne} = $props();
+    // < ne.$interface() to adjust:
+    let left = tweened(0,{duration:0})
+    let top = $state(0)
+    let opacity = tweened(0,{duration:0})
+    ne.left = {set:(v,o)=>left.set(v,o)}
+    ne.top = {set:(v,o)=>top.set(v,o)}
+    ne.opacity = {set:(v,o)=>opacity.set(v,o)}
+    
+    let spanclass = ne.mirror ? 'mirror' : ''
+</script>
+
+<soundneedle style="
+    left:{$left}px;
+    top:{top}px;
+    opacity:{dec($opacity,3)};
+    ">
+    
+    <span class={spanclass}>
+        <img src="pointer.webp" />
+    </span>
+</soundneedle>
+
+<style>
+    soundneedle {
+        position:absolute;
+        mix-blend-mode: color-dodge;
+        pointer-events:none;
+        margin-left:-1em;
+    }
+    soundneedle span.mirror {
+        position:absolute;
+        transform: scaleX(-1);
+    }
+    soundneedle span.mirror img {
+        margin-right: -20em;
+    }
+    img {
+        margin-top: -7em;
+        margin-left: -7em;
+    }
+</style>

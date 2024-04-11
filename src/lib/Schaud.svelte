@@ -3,6 +3,7 @@
 	import { fade,scale } from 'svelte/transition';
     import { fetch,dec } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
+    import Pointer from './Pointer.svelte';
 
     let {playlets,needle_uplink} = $props()
     // figures approach,
@@ -276,27 +277,10 @@
     // let ne1top = $state(0)
     // let ne1left = tweened(0,{duration:0})
     // let ne1opacity = tweened(0,{duration:0})
-    let needles = $state([]);
-    needles[0] =
-        {id: 0,
-         top: 0,
-        }
-        
-    needles[0].opacity = tweened(0,{duration:0})
-    needles[0].left = tweened(0,{duration:0})
-    // needles[1] =
-    //     {id: 1,
-    //      left: tweened(0,{duration:0}),
-    //      top: $state(0),
-    //      opacity: tweened(0,{duration:0}),
-    //     }
-    
-
-
-
-
-
-
+    let needles = $state([
+        {id: 0,mirror:1},
+        {id: 1},
+    ])
     // pick the same needle for continuous sets of cuelets
     let whichneedle = 0
     function find_unused_needle() {
@@ -418,31 +402,9 @@
     <!-- 
              -->
     
-    {#each [needles[0]] as ne (ne.id)}
-        <soundneedle style="
-            left:{$ne.left}px;
-            top:{ne.top}px;
-            opacity:{dec($ne.opacity,3)};
-
-            ">
-            <span style="
-            position:absolute;
-            transform: scaleX(-1);
-            margin-left: -13em;
-            ">
-                <img src="pointer.webp" alt="big old hand"/>
-            </span>
-        </soundneedle>
+    {#each needles as ne (ne.id)}
+        <Pointer {ne} />
     {/each}
-    {#each [needles[1]] as ne (ne.id)}
-        <soundneedle style="
-            left:{$ne.left}px;
-            top:{ne.top}px;
-            opacity:{dec($ne.opacity,3)};
-            ">
-            <img src="pointer.webp" />
-        </soundneedle>
-        {/each}
 
     {#if it_seems_not_to_play}
         <bigdiv transition:scale onclick={start_from_gesture}>
@@ -468,13 +430,6 @@
         }
         div span {
             position:relative;
-        }
-        soundneedle {
-            position:absolute;
-            mix-blend-mode: color-dodge;
-            margin-top: -7em;
-            margin-left: -6em;
-            pointer-events:none;
         }
         soundbox {
             width: 9em;
