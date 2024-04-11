@@ -270,33 +270,44 @@
     }
 
     // tween takes on the duration of the cuelet when .set()
-    let ne0top = $state(0)
-    let ne0left = tweened(0,{duration:0})
-    let ne0opacity = tweened(0,{duration:0})
-    let ne1top = $state(0)
-    let ne1left = tweened(0,{duration:0})
-    let ne1opacity = tweened(0,{duration:0})
-    let needles = [
+    // let ne0top = $state(0)
+    // let ne0left = tweened(0,{duration:0})
+    // let ne0opacity = tweened(0,{duration:0})
+    // let ne1top = $state(0)
+    // let ne1left = tweened(0,{duration:0})
+    // let ne1opacity = tweened(0,{duration:0})
+    let needles = $state([]);
+    needles[0] =
         {id: 0,
-         left: ne0left,
-         top: ne0top,
-         opacity: ne0opacity,
-        },
-        {id: 1,
-         left: ne1left,
-         top: ne1top,
-         opacity: ne1opacity,
-        },
-    ]
+         top: 0,
+        }
+        
+    needles[0].opacity = tweened(0,{duration:0})
+    needles[0].left = tweened(0,{duration:0})
+    // needles[1] =
+    //     {id: 1,
+    //      left: tweened(0,{duration:0}),
+    //      top: $state(0),
+    //      opacity: tweened(0,{duration:0}),
+    //     }
+    
+
+
+
+
+
+
+    // pick the same needle for continuous sets of cuelets
+    let whichneedle = 0
     function find_unused_needle() {
         // there are only two
         // < it seems we can't compare needle==needle, because they are different proxy objects?
         let used = cuelets.map(cuelet => cuelet.needle?.id)
         let is_used = (ne) => used.includes(ne.id)
-        if (is_used(needles[0])) console.log("Needle is used: "+needles[0].id)
-        if (is_used(needles[0])) needles.reverse()
-        if (is_used(needles[0])) debugger
-        let ne = needles[0]
+        let ne = needles[whichneedle]
+        if (is_used(ne)) console.log("Needle is used: "+ne.id)
+        if (is_used(ne)) whichneedle = whichneedle == 0 ? 1 : 0
+        ne = needles[whichneedle]
         if (!ne) debugger
         return ne
     }
@@ -406,10 +417,12 @@
     {/each}
     <!-- 
              -->
+    
+    {#each [needles[0]] as ne (ne.id)}
         <soundneedle style="
-            left:{$ne0left}px;
-            top:{ne0top}px;
-            opacity:{dec($ne0opacity,3)};
+            left:{$ne.left}px;
+            top:{ne.top}px;
+            opacity:{dec($ne.opacity,3)};
 
             ">
             <span style="
@@ -420,13 +433,16 @@
                 <img src="pointer.webp" alt="big old hand"/>
             </span>
         </soundneedle>
+    {/each}
+    {#each [needles[1]] as ne (ne.id)}
         <soundneedle style="
-            left:{$ne1left}px;
-            top:{ne1top}px;
-            opacity:{dec($ne1opacity,3)};
+            left:{$ne.left}px;
+            top:{ne.top}px;
+            opacity:{dec($ne.opacity,3)};
             ">
             <img src="pointer.webp" />
         </soundneedle>
+        {/each}
 
     {#if it_seems_not_to_play}
         <bigdiv transition:scale onclick={start_from_gesture}>
