@@ -1,10 +1,12 @@
 <script lang="ts">
     import { tweened } from 'svelte/motion';
     import { dec } from './FFgemp';
+
+    // a needle
     let {ne} = $props();
-    // < ne.$interface() to adjust:
+    // they needle.left.set(value) etc
     let left = tweened(0,{duration:0})
-    let top = $state(0)
+    let top = tweened(0,{duration:0})
     let opacity = tweened(0,{duration:0})
     ne.left = {set:(v,o)=>left.set(v,o)}
     ne.top = {set:(v,o)=>top.set(v,o)}
@@ -15,7 +17,7 @@
 
 <soundneedle style="
     left:{$left}px;
-    top:{top}px;
+    top:{$top}px;
     opacity:{dec($opacity,3)};
     ">
     

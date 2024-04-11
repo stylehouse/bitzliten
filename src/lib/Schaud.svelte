@@ -322,7 +322,7 @@
         needle.opacity.set(1,{duration:0.2*1000})
         needle.left.set(cuenow.el.offsetLeft*1 + some_left)
         needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
-        needle.top = cuenow.el.offsetTop
+        needle.top.set(cuenow.el.offsetTop)
         // console.log(`needle_moves: @ ${displaytime} \t${progress} of ${dec(duration)}\t`)
         // here we can keep the needle at 0 to align new sprites
         //  ie where in the image of the pointer (hand) the point (fingertip) is
