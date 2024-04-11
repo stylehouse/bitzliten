@@ -58,15 +58,18 @@
     let last_file
     $effect(() => {
         if (file && file != last_file) {
-            sel = {in:10,out:16}
+            sel = {in:40,out:46}
             sel_dominant = true
             dublets = []
             playlets = []
             last_file = file
         }
     })
+    let le
     // ~sel -> modes
     $effect(() => {
+        let see = sel.in
+        le = see
         console.log("~sel ",sel)
     })
 
@@ -287,7 +290,7 @@
     </div>
     <div>
         {#if playlets.length}
-            <Schaud {playlets} {needle_uplink}/>
+            <Schaud {playlets} {needle_uplink} {sel}/>
         {:else}
             <p>
                 ...

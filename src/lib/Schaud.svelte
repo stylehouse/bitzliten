@@ -6,11 +6,11 @@
     import Pointer from './Pointer.svelte';
     import Knob from './Knob.svelte';
 
-    let {playlets,needle_uplink} = $props()
+    let {playlets,needle_uplink,sel} = $props()
     // figures approach,
     let cuelets = $state([])
     // the firstmost in and lastmost out of playlets
-    let sel
+    // let sel
     // the mixer
     let audioContext:AudioContext
     $effect(() => {
@@ -21,12 +21,16 @@
     $effect(() => {
         // < buffering
         console.log("SYNC CLUELETS")
-        init_sel()
+        init_sel('pre')
         sync_cuelets(playlets)
+        init_sel('post')
     })
-    function init_sel() {
+    function init_sel(whence) {
         if (!playlets[0]) return
-        sel = {in: playlets[0].in,out: playlets.slice(-1)[0].out}
+        let eg = {in: playlets[0].in,out: playlets.slice(-1)[0].out}
+        if (sel.in != eg.in || sel.out != eg.out) {
+            console.log("sel != playlets "+whence+": ",{sel,eg})
+        }
     }
 
     function sync_cuelets(playlets) {
@@ -314,20 +318,12 @@
         let source = cuenow.source
         let duration = source.buffer.duration
         let progress = cue_time / source.buffer.duration
-        // let some_left = progress * cueswidth
-        // let value = {
-        //     left: dec(cuenow.el.offsetLeft*1 + some_left*1),
-        //     top: dec(cuenow.el.offsetTop),
-        // }
-        // needlepos.set(value)
-
-        // needle.opacity.set(0)
+        let some_left = progress * cueswidth
         needle.opacity.set(1,{duration:0.2*1000})
-        needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*progress)
+        needle.left.set(cuenow.el.offsetLeft*1 + some_left)
         needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
         needle.top = cuenow.el.offsetTop
         // console.log(`needle_moves: @ ${displaytime} \t${progress} of ${dec(duration)}\t`)
-
         // here we can keep the needle at 0 to align new sprites
         //  ie where in the image of the pointer (hand) the point (fingertip) is
         // needle.left.set(0)
@@ -383,13 +379,17 @@
     let selin = $state()
     let selout = $state()
     let selmo = $state()
-    let sel_adjustable = false
+    let sel_adjustable = $state(false)
     $effect(() => {
         if (sel?.out) {
+            console.log("Shaud <- sel")
             sel_adjustable = true
             selin = sel.in
             selout = sel.out
         }
+    })
+    $effect(() => {
+        if (selin != null) sel.in = selin
     })
 
 
