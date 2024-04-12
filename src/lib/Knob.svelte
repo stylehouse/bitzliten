@@ -179,7 +179,7 @@
 		overflow: hidden;
 	}
 	input {
-		width: 1.2em;
+		width: 1.8em;
 		text-align: center;
 		background: none;
 		border: none;

@@ -34,7 +34,7 @@
         modes = FF.modes
         if ('auto') {
             file = 'aliomar.mp3'
-            file = '01.Time_Has_Told_Me.ogg'
+            file = 'loom - Dsharp Minor Triblaalistic 170 Experiment 6 10 20222.flac'
             // letsgo()
         }
     });
@@ -46,8 +46,8 @@
     let sel = $state({})
     // push|pull their modes/seek|length representation
     let sel_dominant = true
-
     // size in seconds to encode at a time (a dublet)
+    //  which sel.in|out are always a multiple of
     let chunk_length = 2
     // chunks, any time, any modes
     let dublets:Array<adublet> = $state([])
@@ -59,17 +59,41 @@
     let last_file
     $effect(() => {
         if (file && file != last_file) {
-            sel = {in:40,out:46}
-            sel_dominant = true
+            init_sel()
             dublets = []
             playlets = []
             last_file = file
         }
     })
+    function init_sel() {
+        sel = {in:40,out:46, chunk_length}
+        // copies to modes after this
+        sel_dominant = true
+        // knows how to apply changes
+        sel.input = (o) => sel_input(o)
+    }
+    // these in|out or start|end come from yonder
+    async function sel_input(o) {
+
+        let was = {in:sel.in,out:sel.out}
+        // make a fine-grained layer
+        sel.start = o.in
+        sel.end = o.out
+        // inclusively select dublet spaces
+        sel.in = Math.floor(sel.start / sel.chunk_length) * sel.chunk_length
+        sel.out = Math.ceil(sel.end / sel.chunk_length) * sel.chunk_length
+
+        if (was.in != sel.in || was.out != sel.out) {
+            sel_to_modes()
+            letsgo()
+        }
+        return console.log(`resists sel input`,o)
+    }
     let le
     // ~sel -> modes
     $effect(() => {
         let see = sel.in
+        // < this must be done, or the log() never happens, wtf
         le = see
         console.log("~sel ",sel)
     })

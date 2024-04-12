@@ -137,8 +137,7 @@
     let upto = $state(0)
     type acuelet = adublet & {startTime:number,source,needle,el}
     let cuenow:null|adublet = null
-    // we shall run this whenever a new cuelet needs to .source and .play()
-    //  also runs at random other times
+    // a new cuenow needs to .source and .play()
     function scheduleNextSound(c?) {
         c ||= {}
         let remarks = []
@@ -187,7 +186,7 @@
 
 
             source.onended = () => {
-                console.log(`Ends ${cuelet.in} ne:${needle.id}`,cuelets.map(cu => cu.needle))
+                // console.log(`Ends ${cuelet.in} ne:${needle.id}`,cuelets.map(cu => cu.needle))
                 // on the cuelet that was cuenow when it started playing
                 delete cuelet.source
                 delete cuelet.needle
@@ -205,7 +204,7 @@
         if (!cuelets.includes(cuenow)) remarks.push("!in")
         if (cuenow.needle) remarks.push("ne:"+cuenow.needle.id)
 
-        console.log(`NextSound: ${cuelet.in}  ${dec(audioContext.currentTime)}  ${remarks.join("  ")}`)
+        // console.log(`NextSound: ${cuelet.in}  ${dec(audioContext.currentTime)}  ${remarks.join("  ")}`)
 
 
     }
@@ -253,7 +252,6 @@
         the = theone = {}
         setTimeout(() => up_displaytime(the), 166)
 
-        cuelets && 1
         if (!(cuenow && cuenow.el)) return
         
         let length = sel.out - sel.in
@@ -378,18 +376,33 @@
     }
     let selin = $state()
     let selout = $state()
-    let selmo = $state()
+    let selmo = $state(0)
     let sel_adjustable = $state(false)
+    // push to sel
+    $effect(() => {
+        if (selin == null) return
+        if (selmo) {
+            // move the whole selection
+            selin += selmo
+            selout += selmo
+            // gets reset to 0
+            selmo = 0
+        }
+        let o = {in:selin,out:selout}
+        console.log("Shaud -> sel",o)
+        sel.input(o)
+    })
+    // pull from sel
+    let precise = $state('')
     $effect(() => {
         if (sel?.out) {
-            console.log("Shaud <- sel")
             sel_adjustable = true
             selin = sel.in
             selout = sel.out
+            // precise = sel.start +' -- '+ sel.end
+            let o = {in:selin,out:selout}
+            console.log("Shaud <- sel",o)
         }
-    })
-    $effect(() => {
-        if (selin != null) sel.in = selin
     })
 
 
@@ -407,10 +420,11 @@
                 <span>
                     in
                     <Knob min={sel.in-10} max={sel.in+10} 
-                    bind:value={selin} ></Knob>
+                        bind:value={selin} ></Knob>
                     move
-                    <Knob min={sel.in-10} max={sel.in+10} 
+                    <Knob min={-30} max={+30} 
                     bind:value={selmo} ></Knob>
+                    @ {precise}
                 </span>
             {/if}
         </span>
