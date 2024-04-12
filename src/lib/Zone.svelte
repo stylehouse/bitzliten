@@ -71,19 +71,22 @@
         sel_dominant = true
         // knows how to apply changes
         sel.input = (o) => sel_input(o)
+        // input itself to create the fine-grained layer start|end
+        sel_input(sel)
     }
     // these in|out or start|end come from yonder
     async function sel_input(o) {
-
         let was = {in:sel.in,out:sel.out}
         // make a fine-grained layer
-        sel.start = o.in
-        sel.end = o.out
+        let fel = {}
+        fel.start = o.in
+        fel.end = o.out
         // inclusively select dublet spaces
-        sel.in = Math.floor(sel.start / sel.chunk_length) * sel.chunk_length
-        sel.out = Math.ceil(sel.end / sel.chunk_length) * sel.chunk_length
+        fel.in = Math.floor(fel.start / sel.chunk_length) * sel.chunk_length
+        fel.out = Math.ceil(fel.end / sel.chunk_length) * sel.chunk_length
 
-        if (was.in != sel.in || was.out != sel.out) {
+        Object.assign(sel,fel)
+        if (was.in != fel.in || was.out != fel.out) {
             sel_to_modes()
             letsgo()
         }

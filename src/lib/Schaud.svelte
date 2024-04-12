@@ -379,8 +379,19 @@
     let selmo = $state(0)
     let sel_adjustable = $state(false)
     // push to sel
+    let nomore = 0
     $effect(() => {
         if (selin == null) return
+        if (nomore) return
+
+        push_to_sel()
+
+        nomore = 1
+        setTimeout(() => {
+            nomore = 0
+        },220)
+    })
+    function push_to_sel() {
         if (selmo) {
             // move the whole selection
             selin += selmo
@@ -390,8 +401,11 @@
         }
         let o = {in:selin,out:selout}
         console.log("Shaud -> sel",o)
-        sel.input(o)
-    })
+
+        setTimeout(() => {
+            sel.input(o)
+        },10)
+    }
     // pull from sel
     let precise = $state('')
     $effect(() => {
@@ -423,7 +437,7 @@
                         bind:value={selin} ></Knob>
                     move
                     <Knob min={-30} max={+30} 
-                    bind:value={selmo} ></Knob>
+                        bind:value={selmo} ></Knob>
                     @ {precise}
                 </span>
             {/if}
