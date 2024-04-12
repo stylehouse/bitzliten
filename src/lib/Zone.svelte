@@ -34,6 +34,7 @@
         modes = FF.modes
         if ('auto') {
             file = 'aliomar.mp3'
+            file = '01.Time_Has_Told_Me.ogg'
             // letsgo()
         }
     });
