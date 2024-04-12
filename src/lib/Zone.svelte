@@ -33,8 +33,8 @@
         await FF.init()
         modes = FF.modes
         if ('auto') {
-            file = 'aliomar.mp3'
-            file = 'loom - Dsharp Minor Triblaalistic 170 Experiment 6 10 20222.flac'
+            // file ||= 'aliomar.mp3'
+            file ||= 'loom - Dsharp Minor Triblaalistic 170 Experiment 6 10 20222.flac'
             // letsgo()
         }
     });
@@ -295,6 +295,10 @@
     function handleDragOver(e) {
         e.preventDefault();
     }
+    let magico = $state('')
+    $effect(() => {
+        magico = sel.so
+    })
 </script>
 
 <main>
@@ -318,7 +322,8 @@
     </div>
     <div>
         {#if playlets.length}
-            <Schaud {playlets} {needle_uplink} {sel}/>
+            <Schaud {playlets} {needle_uplink} {sel} bind:magic={sel.so}/>
+            <p>BTW: {magico}</p>
         {:else}
             <p>
                 ...

@@ -6,7 +6,17 @@
     import Pointer from './Pointer.svelte';
     import Knob from './Knob.svelte';
 
-    let {playlets,needle_uplink,sel} = $props()
+    let {
+        playlets,
+        needle_uplink,
+        sel,
+        magic = $bindable(),
+    } = $props()
+    magic = "also"
+    setTimeout(() => {
+    magic = "dingbat"
+    },1500)
+
     // figures approach,
     let cuelets = $state([])
     // the firstmost in and lastmost out of playlets
@@ -284,6 +294,11 @@
         {id: 0,mirror:1},
         {id: 1},
     ])
+    needles.map(ne => {
+        ne.set_tweens = (c) => {
+            Object.assign(ne,c)
+        }
+    })
     // pick the same needle for continuous sets of cuelets
     let whichneedle = 0
     function find_unused_needle() {
@@ -466,7 +481,7 @@
              -->
     
     {#each needles as ne (ne.id)}
-        <Pointer {ne} />
+        <Pointer {ne}  />
     {/each}
 
     {#if it_seems_not_to_play}

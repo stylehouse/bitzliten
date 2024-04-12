@@ -3,14 +3,12 @@
     import { dec } from './FFgemp';
 
     // a needle
-    let {ne} = $props();
+    let {ne = $bindable()} = $props();
     // they needle.left.set(value) etc
     let left = tweened(0,{duration:0})
     let top = tweened(0,{duration:0})
     let opacity = tweened(0,{duration:0})
-    ne.left = {set:(v,o)=>left.set(v,o)}
-    ne.top = {set:(v,o)=>top.set(v,o)}
-    ne.opacity = {set:(v,o)=>opacity.set(v,o)}
+    ne.set_tweens({left,top,opacity})
     
     let spanclass = ne.mirror ? 'mirror' : ''
 </script>
