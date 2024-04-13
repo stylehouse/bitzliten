@@ -284,12 +284,6 @@
     }
 
     // tween takes on the duration of the cuelet when .set()
-    // let ne0top = $state(0)
-    // let ne0left = tweened(0,{duration:0})
-    // let ne0opacity = tweened(0,{duration:0})
-    // let ne1top = $state(0)
-    // let ne1left = tweened(0,{duration:0})
-    // let ne1opacity = tweened(0,{duration:0})
     let needles = $state([
         {id: 0,mirror:1},
         {id: 1},
@@ -398,7 +392,7 @@
     $effect(() => {
         if (selin == null) return
         if (nomore) return
-
+        return
         push_to_sel()
 
         nomore = 1
@@ -407,7 +401,7 @@
         },220)
     })
     function push_to_sel() {
-        if (selmo) {
+        if (0 && selmo) {
             // move the whole selection
             selin += selmo
             selout += selmo
@@ -416,18 +410,23 @@
         }
         let o = {in:selin,out:selout}
         console.log("Shaud -> sel",o)
+        magic = JSON.stringify([sel,o])
 
         setTimeout(() => {
-            sel.input(o)
-        },10)
+            // sel.input(o)
+        },1000)
     }
+    $inspect(sel)
+    $inspect(selin)
     // pull from sel
     let precise = $state('')
     $effect(() => {
         if (sel?.out) {
             sel_adjustable = true
-            selin = sel.in
-            selout = sel.out
+            setTimeout(() => {
+                if (selin != sel.in) selin = sel.in
+                if (selout != sel.out) selout = sel.out
+            },10)
             // precise = sel.start +' -- '+ sel.end
             let o = {in:selin,out:selout}
             console.log("Shaud <- sel",o)
@@ -449,10 +448,12 @@
                 <span>
                     in
                     <Knob min={sel.in-10} max={sel.in+10} 
-                        bind:value={selin} ></Knob>
+                        bind:value={selin}
+                        commit={push_to_sel} ></Knob>
                     move
                     <Knob min={-30} max={+30} 
-                        bind:value={selmo} ></Knob>
+                        bind:value={selmo}
+                        commit={push_to_sel} ></Knob>
                     @ {precise}
                 </span>
             {/if}
@@ -472,7 +473,8 @@
                 <span>
                     out
                     <Knob min={sel.out-10} max={sel.out+10} 
-                    bind:value={selout} ></Knob>
+                    bind:value={selout}
+                    commit={push_to_sel} ></Knob>
                 </span>
             {/if}
         </span>

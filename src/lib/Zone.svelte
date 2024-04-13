@@ -296,9 +296,6 @@
         e.preventDefault();
     }
     let magico = $state('')
-    $effect(() => {
-        magico = sel.so
-    })
 </script>
 
 <main>
@@ -322,7 +319,9 @@
     </div>
     <div>
         {#if playlets.length}
-            <Schaud {playlets} {needle_uplink} {sel} bind:magic={sel.so}/>
+            <Schaud {playlets} {needle_uplink} {sel}
+                bind:magic={magico}
+                />
             <p>BTW: {magico}</p>
         {:else}
             <p>
