@@ -66,8 +66,16 @@
     })
     function init_sel() {
         selections = [
-            {id:0,in:40,out:46}
+            {id:0}
         ]
+        // allow /$sel to be added to in Selection.svelte
+        // < better than this - seems a messy hack - but worked for needles/Pointer
+        selections.map(sel => {
+            sel.set = (c) => {
+                Object.assign(sel,c)
+            }
+        })
+        // in:40,out:46
         // // copies to modes after this
         // sel_dominant = true
         // // knows how to apply changes
@@ -75,6 +83,8 @@
         // // input itself to create the fine-grained layer start|end
         // sel_input(sel)
     }
+    
+
     // these in|out or start|end come from yonder
     async function sel_input(o) {
         let was = {in:sel.in,out:sel.out}
@@ -93,6 +103,7 @@
         }
         return console.log(`resists sel input`,o)
     }
+
     // let le
     // ~sel -> modes
     // $effect(() => {
@@ -125,12 +136,17 @@
     function config_maybe_changed() {
         letsgo()
     }
+    // Knobs elsewhere, eg Selection
+    function on_reselection() {
+        letsgo()
+    }
 
     function letsgo() {
         if (selections[0] == null) debugger
         playlets = []
         // < support more than one?
         selections.map(sel => {
+            if (sel.in == null) return
             // copy this sel to modes
             sel_to_modes(sel)
 
@@ -306,7 +322,7 @@
     </div>
     <div>
         {#each selections as sel (sel.id)}
-            <Selection {sel} {needle_uplink} />
+            <Selection {sel} {needle_uplink} {on_reselection} {chunk_length} />
         {/each}
         
 

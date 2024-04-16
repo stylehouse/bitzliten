@@ -4,18 +4,15 @@
     import { fetch,dec } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
     import Pointer from './Pointer.svelte';
-    import Knob from './Knob.svelte';
 
     let {
         playlets,
         needle_uplink,
         sel,
-        magic = $bindable(),
+        on_reselection,
+        // snippets
+        leftend,rightend,
     } = $props()
-    magic = "also"
-    setTimeout(() => {
-    magic = "dingbat"
-    },1500)
 
     // figures approach,
     let cuelets = $state([])
@@ -383,57 +380,8 @@
         }
         return msg.join(" - ")
     }
-    let selin = $state()
-    let selout = $state()
-    let selmo = $state(0)
-    let sel_adjustable = $state(false)
-    // push to sel
-    let nomore = 0
-    $effect(() => {
-        if (selin == null) return
-        if (nomore) return
-        return
-        push_to_sel()
-
-        nomore = 1
-        setTimeout(() => {
-            nomore = 0
-        },220)
-    })
-    function push_to_sel() {
-        if (0 && selmo) {
-            // move the whole selection
-            selin += selmo
-            selout += selmo
-            // gets reset to 0
-            selmo = 0
-        }
-        let o = {in:selin,out:selout}
-        console.log("Shaud -> sel",o)
-        magic = JSON.stringify([sel,o])
-
-        setTimeout(() => {
-            // sel.input(o)
-        },1000)
-    }
-    $inspect(sel)
-    $inspect(selin)
-    // pull from sel
-    let precise = $state('')
-    $effect(() => {
-        if (sel?.out) {
-            sel_adjustable = true
-            setTimeout(() => {
-                if (selin != sel.in) selin = sel.in
-                if (selout != sel.out) selout = sel.out
-            },10)
-            // precise = sel.start +' -- '+ sel.end
-            let o = {in:selin,out:selout}
-            console.log("Shaud <- sel",o)
-        }
-    })
-
-
+    // < pixels width per second
+    let width_per_s = 100
 </script>
 
 <div>*audio* {upto}:
@@ -444,19 +392,7 @@
     <span>
         <span>
             <button onclick={thump_machinery}>thump</button>
-            {#if sel_adjustable}
-                <span>
-                    in
-                    <Knob min={sel.in-10} max={sel.in+10} 
-                        bind:value={selin}
-                        commit={push_to_sel} ></Knob>
-                    move
-                    <Knob min={-30} max={+30} 
-                        bind:value={selmo}
-                        commit={push_to_sel} ></Knob>
-                    @ {precise}
-                </span>
-            {/if}
+            {@render leftend(width_per_s)}
         </span>
 
         {#each cuelets as cuelet (cuelet.in)}
@@ -469,14 +405,7 @@
         {/each}
 
         <span>
-            {#if sel_adjustable}
-                <span>
-                    out
-                    <Knob min={sel.out-10} max={sel.out+10} 
-                    bind:value={selout}
-                    commit={push_to_sel} ></Knob>
-                </span>
-            {/if}
+            {@render rightend(width_per_s)}
         </span>
         
     <!-- 
