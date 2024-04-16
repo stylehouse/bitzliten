@@ -1,7 +1,6 @@
 <script>
     import Schaud from "./Schaud.svelte";
     import Knob from './Knob.svelte';
-    import { writable } from 'svelte/store';
 
     let {sel,needle_uplink,on_reselection,chunk_length} = $props()
 
@@ -26,11 +25,12 @@
             out: Math.ceil(out_time / chunk_length) * chunk_length,
         }
         if (fel.in != sel.in || fel.out != sel.out) {
+            let first_ever = sel.in == null
             // non-reactively set it here
             sel.set(fel)
-            // then cause a reaction
-            on_reselection()
             console.log("Schaud Woke",sel)
+            // then cause a reaction
+            !first_ever && on_reselection()
         }
         else {
             console.log("Schaud zzzz",sel)
@@ -43,26 +43,33 @@
     // push to sel
     let nomore = 0
     $effect(() => {
-        if (selin == null) return
-        if (nomore) return
-        return
-        push_to_sel()
-
-        nomore = 1
-        setTimeout(() => {
-            nomore = 0
-        },220)
+        selin = in_time
+        selout = out_time
+        console.log("selinout <- inout_time")
     })
-    function push_to_sel() {
-        if (0 && selmo) {
+    $effect(() => {
+        if (selmo) {
             // move the whole selection
-            selin += selmo
-            selout += selmo
+            selin += selmo*1
+            selout += selmo*1
             // gets reset to 0
             selmo = 0
         }
+        if (selin + 4 > selout) {
+            selout = selin + 4
+        }
+
+        in_time = selin
+        out_time = selout
+        console.log("inout_time <- selinout")
+    })
+    function push_to_sel() {
+        
         let o = {in:selin,out:selout}
         console.log("Shaud -> sel",o)
+        
+        selin = selin
+        selout = selout
         let selo = Object.assign({},sel)
         delete selo.playlets
         magic = JSON.stringify([selo,o])
@@ -71,8 +78,6 @@
             // sel.input(o)
         },1000)
     }
-    $inspect(sel)
-    $inspect(selin)
     // pull from sel
     let precise = $state('')
     let wert = {}
