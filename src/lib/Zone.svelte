@@ -4,8 +4,9 @@
     import Knob from "./Knob.svelte";
     // with <audio> is awkward. maybe somewhere?
     import Player from "./Player.svelte";
-    // using the audio api
-    import Schaud from "./Schaud.svelte";
+    // per selection
+    //  contains Schaud.svelte, using the audio api
+    import Selection from "./Selection.svelte";
     // 2s chunks
     // lots of them together, buffering
     // < loop end adjustment
@@ -43,9 +44,7 @@
     // these reset per file:
 
     // the selection
-    let sel = $state({})
-    // push|pull their modes/seek|length representation
-    let sel_dominant = true
+    let selections = $state([])
     // size in seconds to encode at a time (a dublet)
     //  which sel.in|out are always a multiple of
     let chunk_length = 2
@@ -66,13 +65,15 @@
         }
     })
     function init_sel() {
-        sel = {in:40,out:46, chunk_length}
-        // copies to modes after this
-        sel_dominant = true
-        // knows how to apply changes
-        sel.input = (o) => sel_input(o)
-        // input itself to create the fine-grained layer start|end
-        sel_input(sel)
+        selections = [
+            {id:0,in:40,out:46}
+        ]
+        // // copies to modes after this
+        // sel_dominant = true
+        // // knows how to apply changes
+        // sel.input = (o) => sel_input(o)
+        // // input itself to create the fine-grained layer start|end
+        // sel_input(sel)
     }
     // these in|out or start|end come from yonder
     async function sel_input(o) {
@@ -82,8 +83,8 @@
         fel.start = o.in
         fel.end = o.out
         // inclusively select dublet spaces
-        fel.in = Math.floor(fel.start / sel.chunk_length) * sel.chunk_length
-        fel.out = Math.ceil(fel.end / sel.chunk_length) * sel.chunk_length
+        fel.in = Math.floor(fel.start / chunk_length) * chunk_length
+        fel.out = Math.ceil(fel.end / chunk_length) * chunk_length
 
         Object.assign(sel,fel)
         if (was.in != fel.in || was.out != fel.out) {
@@ -92,42 +93,24 @@
         }
         return console.log(`resists sel input`,o)
     }
-    let le
+    // let le
     // ~sel -> modes
-    $effect(() => {
-        let see = sel.in
-        // < this must be done, or the log() never happens, wtf
-        le = see
-        console.log("~sel ",sel)
-    })
+    // $effect(() => {
+    //     let see = sel.in
+    //     // < this must be done, or the log() never happens, wtf
+    //     le = see
+    //     console.log("~sel ",sel)
+    // })
 
 
-    // sel <-> modes
+    // sel -> modes
     // called from letsgo(), so we have modes[]
-    function update_sel() {
-        if (sel_dominant) {
-            // push to modes, during the 
-            sel_to_modes()
-            sel_dominant = false
-        }
-        else {
-            // user changes to modes should become sel, which shapes playlets
-            modes_to_sel()
-        }
-    }
-    function sel_to_modes() {
+    function sel_to_modes(sel) {
         console.log("sel_to_modes()")
         let seek = find_t_in_N(modes,'seek')
         seek.s = sel.in
         let length = find_t_in_N(modes,'length')
         length.s = sel.out - sel.in
-    }
-    function modes_to_sel() {
-        console.log("modes_to_sel()")
-        let seek = find_t_in_N(modes,'seek')
-        sel.in = seek.s
-        let length = find_t_in_N(modes,'length')
-        sel.out = seek.s + length.s
     }
 
     // two paths of config change notification:
@@ -144,12 +127,17 @@
     }
 
     function letsgo() {
-        if (sel.in == null) return []
-        // update sel
-        update_sel()
+        if (selections[0] == null) debugger
+        playlets = []
+        // < support more than one?
+        selections.map(sel => {
+            // copy this sel to modes
+            sel_to_modes(sel)
 
-        // make view of what to play
-        update_playlets()
+            // make view of what to play
+            sel.playlets = make_playlets(sel)
+            playlets.push(...sel.playlets)
+        })
         // find gapos
         let needs = playlets.filter(playlet => !playlet.ideal_dub)
         prioritise_needs(needs)
@@ -159,7 +147,7 @@
     
     
     // generate a bunch of tiles for your ears to walk on
-    function update_playlets() {
+    function make_playlets(sel) {
         let {n_chunks} = get_timespace(sel)
         // a set of dublets stretching across it
         let nublets = create_unfulfilled_dublets(sel,n_chunks,chunk_length)
@@ -171,7 +159,7 @@
         nublets.map(nublet => find_dub(nublet))
 
         // and we now call that
-        playlets = nublets
+        return nublets
     }
     // playlet // dublet
     function find_dub(nublet) {
@@ -295,7 +283,6 @@
     function handleDragOver(e) {
         e.preventDefault();
     }
-    let magico = $state('')
 </script>
 
 <main>
@@ -318,16 +305,10 @@
         
     </div>
     <div>
-        {#if playlets.length}
-            <Schaud {playlets} {needle_uplink} {sel}
-                bind:magic={magico}
-                />
-            <p>BTW: {magico}</p>
-        {:else}
-            <p>
-                ...
-            </p>
-        {/if}
+        {#each selections as sel (sel.id)}
+            <Selection {sel} {needle_uplink} />
+        {/each}
+        
 
     </div>
     <div>
