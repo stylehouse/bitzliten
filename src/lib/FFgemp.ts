@@ -99,6 +99,7 @@ export class FFgemp {
 
     // log messages
     private m(message: string) {
+        this.on_handle('stdout', message)
         this.on_handle('message', message)
         this.console_log && console.log(message);
     }
@@ -108,6 +109,9 @@ export class FFgemp {
     }
     on(name: string, callback: Function) {
         this.on_handlers[name] = callback
+    }
+    off(name: string) {
+        delete this.on_handlers[name]
     }
 
     async init() {
@@ -136,15 +140,14 @@ export class FFgemp {
     }
 
 
-    async transcode(file: File,modes) {
-
+    async transcode(file: File,modes,fileinfo) {
         const data = await fetchFile(file);
         const input = 'input.mp3';
         const ext = 'mkv';
         const output = 'output.' + ext;
-
+        // < not every time: have a filemanager in Zone, check hashes
         await this.ffmpeg.writeFile(input, data);
-        
+        let done = this.read_ffmpeg_stdout_into(fileinfo)
         await this.ffmpeg.exec([
             "-i", input,
             ...this.modes_to_cmds(modes),
@@ -153,13 +156,54 @@ export class FFgemp {
             // "-c:v","mjpeg", // except for album art (requires .mkv)
             output,
         ]);
+        done()
 
         const out = await this.ffmpeg.readFile(output);
         return new Blob([out.buffer], { type: "audio/" + ext });
     }
 
-}
+    // < separate this to a `ffmpeg -i $file` job for identifying what the user gives us
+    read_ffmpeg_stdout_into(fileinfo) {
+        let inside = {}
+        let interpret = (m:string) => {
+            if (m.startsWith('Input #')) return inside.input = 1
+            if (!m.startsWith('  ')) inside.input = 0
+            if (inside.input) {
+                if (m.startsWith('  Metadata')) return inside.metadata = 1
+                if (!m.startsWith('    ')) inside.metadata = 0
+                if (inside.metadata) {
+                    let match = m.match(/^    (\w+)\s*: (.+)\n?$/);
+                    if (match) {
+                        let meta = fileinfo.meta ||= {}
+                        meta[match[1]] = match[2]
+                    }
+                }
+                else {
+                    let match = m.match(/  Duration:\s*(\d+):(\d+):(\d+\.\d+).+?bitrate: (\d.+)$/)
+                    if (match) {
+                        let [whole,hours,minutes,seconds,bitrate] = match
+                        seconds = seconds*1 + minutes*60 + hours*60*60
+                        fileinfo.duration = seconds
+                        fileinfo.bitrate = bitrate
+                    }
+                    match = m.match(/  (Stream #\S+): (.+)$/)
+                    if (match) {
+                        let streams = fileinfo.streams ||= {}
+                        streams[match[1]] = match[2]
+                    }
+                }
+            }
+            // < check jpeg data on the input did|didn't get into the transcoded-music|dublets
+            //   sometimes there are weird noises attached to songs, sometimes biographies etc
+            if (m.startsWith('Output #')) return
+        }
+        this.on('stdout', interpret)
+        return () => {
+            this.off('stdout')
+        }
+    }
 
+}
 
 
 function things() {

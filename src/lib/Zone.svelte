@@ -43,6 +43,8 @@
 
     // these reset per file:
 
+    // info about the file
+    let fileinfo = $state()
     // the selection
     let selections = $state([])
     // size in seconds to encode at a time (a dublet)
@@ -58,6 +60,7 @@
     let last_file
     $effect(() => {
         if (file && file != last_file) {
+            fileinfo = {}
             init_sel()
             dublets = []
             playlets = []
@@ -253,7 +256,7 @@
 
         latest_cmd = joblet.modes_json
         let job_start_ts = now()
-        let result = await FF.transcode(file,joblet.modes)
+        let result = await FF.transcode(file,joblet.modes,fileinfo)
         joblet.objectURL = URL.createObjectURL(result)
         dublets.push(joblet)
         last_job_time = now() - job_start_ts
@@ -290,10 +293,21 @@
     }
     // also, cuelet player can reject bad records:
     //  for some reason some of these objectURLs return blobs only 800 long
+    let needle_complaints = 0
     needle_uplink.bad_playlet = (playlet) => {
         let dublet = playlet.ideal_dub || playlet.vague_dub
         dublets = dublets.filter(dub => dub != dublet)
-        letsgo()
+        if (!needle_complaints) {
+            needle_complaints = 1
+            setTimeout(() => {
+                if (needle_complaints > 1) letsgo()
+                needle_complaints = 0
+            }, 1300)
+            setTimeout(() => letsgo(), 660)
+        }
+        else {
+            needle_complaints++
+        }
     }
 
     
@@ -319,7 +333,7 @@
         style="border: 2px dashed #ccc; padding: 20px; text-align: center;"
     >
         {#if playlets.length}
-            loaded
+            loaded: {JSON.stringify(fileinfo)}
         {:else}
             <p>
                 Drag and drop an audio file here
