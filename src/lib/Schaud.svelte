@@ -82,9 +82,7 @@
         cuelet.playlet = playlet
         // find playable
         let dublet = playlet.ideal_dub || playlet.vague_dub
-        if (dublet) {
-            cuelet.objectURL = dublet.objectURL
-        }
+        cuelet.objectURL = dublet?.objectURL
         // < doing this already (we ) stops the first player playing. wtf
         // else if (playlet.objectURL) {
         //     cuelet.objectURL = playlet.objectURL
@@ -108,6 +106,25 @@
         // our fetch() returns a Uint8Array!
         let res = new Response(buf)
         let blob = await res.arrayBuffer()
+        // some kind of bad data happens when <1k
+        // < find out what exactly. seeking off the end of the source?
+        if (blob.byteLength < 1000) {
+            console.warn("Bad dub")
+            needle_uplink.bad_playlet(cuelet.playlet)
+            let decode_error
+            try {
+                cuelet.buffer = await audioContext.decodeAudioData(blob)
+            }
+            catch(er) {
+                decode_error = er
+            }
+            // always happens when buffer <1k
+            if (!decode_error) debugger
+            if (!decode_error.message.includes('Unable to decode audio data')) debugger
+            console.error("cuelet <1k: ",{cuelet,buf,res,blob,decode_error})
+            // we will fail to play until re-dubbed
+            return
+        }
         // < flipping the order of these next two lines always makes .blob_size=0 wtf
         cuelet.blob_size = blob.byteLength
         cuelet.buffer = await audioContext.decodeAudioData(blob)
@@ -181,7 +198,9 @@
             let cuenext = next_cuelet(cuenow)
             if (cuenext.in != cuenow.out) {
                 // discontinuity, probably from looping
-                let left = source.buffer.duration - fadetime
+                // the next thing might not be buffered yet!
+                let duration = source.buffer?.duration || 2000
+                let left = duration - fadetime
                 remarks.push("crossfade in "+left)
                 setTimeout(() => {
                     cuelet.source.fadeout(fadetime)
@@ -360,6 +379,8 @@
     }
     function cuelet_info(cuelet) {
         let msg = []
+        // 
+        msg.push(cuelet.in)
         // .buffer is decoded audio, .source while playing it
         if (!cuelet.buffer) {
             msg.push("!buffer")

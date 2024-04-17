@@ -28,12 +28,12 @@
             let first_ever = sel.in == null
             // non-reactively set it here
             sel.set(fel)
-            console.log("Schaud Woke",sel)
+            console.log("Selection Woke",sel)
             // then cause a reaction
             !first_ever && on_reselection()
         }
         else {
-            console.log("Schaud zzzz",sel)
+            console.log("Selection zzzz",sel)
         }
     })
 
@@ -45,7 +45,7 @@
     $effect(() => {
         selin = in_time
         selout = out_time
-        console.log("selinout <- inout_time")
+        console.log(" <- inout_time")
     })
     $effect(() => {
         if (selmo) {
@@ -61,7 +61,7 @@
 
         in_time = selin
         out_time = selout
-        console.log("inout_time <- selinout")
+        console.log("inout_time <- ")
     })
     function push_to_sel() {
         

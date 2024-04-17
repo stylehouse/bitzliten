@@ -117,7 +117,7 @@
     // sel -> modes
     // called from letsgo(), so we have modes[]
     function sel_to_modes(sel) {
-        console.log("sel_to_modes()")
+        // console.log("sel_to_modes()")
         let seek = find_t_in_N(modes,'seek')
         seek.s = sel.in
         let length = find_t_in_N(modes,'length')
@@ -287,6 +287,13 @@
         if (remains < last_job_time+0.2) {
             needs.push(needs.shift())
         }
+    }
+    // also, cuelet player can reject bad records:
+    //  for some reason some of these objectURLs return blobs only 800 long
+    needle_uplink.bad_playlet = (playlet) => {
+        let dublet = playlet.ideal_dub || playlet.vague_dub
+        dublets = dublets.filter(dub => dub != dublet)
+        letsgo()
     }
 
     
