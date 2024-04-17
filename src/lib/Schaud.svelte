@@ -203,6 +203,10 @@
                 let left = duration - fadetime
                 remarks.push("crossfade in "+left)
                 setTimeout(() => {
+                    // this may occur after a cuelets[] rearrangement
+                    if (cuelet != cuenow) return console.warn("give up scheduleNextSound() control")
+                    // this will go back to [0] if no such cuenow
+                    cuenext = next_cuelet(cuenow)
                     cuelet.source.fadeout(fadetime)
                     needle.opacity.set(0,{duration:fadetime*1000})
                     cuenow = cuenext
