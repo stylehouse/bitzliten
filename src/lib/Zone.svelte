@@ -256,7 +256,11 @@
 
         latest_cmd = joblet.modes_json
         let job_start_ts = now()
-        let result = await FF.transcode(file,joblet.modes,fileinfo)
+        let result = await FF.transcode(
+            file,
+            joblet.modes,
+            fileinfo
+        )
         joblet.objectURL = URL.createObjectURL(result)
         dublets.push(joblet)
         last_job_time = now() - job_start_ts
