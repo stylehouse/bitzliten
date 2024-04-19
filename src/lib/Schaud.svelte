@@ -56,9 +56,11 @@
             sync_cuelet(cuelet,playlet)
         })
         tr.done()
+        // and put them in the right order
+        cuelets = cuelets.sort((a,b) => a.in - b.in)
     }
     // maintain|whittle an array
-    //  removing things not keep() before done().
+    //  removing items without keep(z) before done().
     // you may push more in meanwhile
     function transact_goners(N) {
         let unhad = N.slice()

@@ -1,4 +1,4 @@
-<script>
+<script lang=ts>
     import Schaud from "./Schaud.svelte";
     import Knob from './Knob.svelte';
 
@@ -68,8 +68,8 @@
         let o = {in:selin,out:selout}
         console.log("Shaud -> sel",o)
         
-        selin = selin
-        selout = selout
+        // selin = selin
+        // selout = selout
         let selo = Object.assign({},sel)
         delete selo.playlets
         magic = JSON.stringify([selo,o])
