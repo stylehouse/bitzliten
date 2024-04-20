@@ -271,8 +271,13 @@
         if (message == 'Aborted()') {
             message = 'done in '+dec(last_job_time,3)+'s'
         }
+        fileinfo = fileinfo
         pending = false
     }
+    let duration = $state()
+    $effect(() => {
+        if (fileinfo?.duration) duration = fileinfo.duration
+    })
     
     // < detect and diag about not being allowed to .play() sound
 
@@ -347,7 +352,8 @@
     </div>
     <div>
         {#each selections as sel (sel.id)}
-            <Selection {sel} {needle_uplink} {on_reselection} {chunk_length} />
+            <Selection {sel} {needle_uplink}
+                {on_reselection} {chunk_length} {duration} />
         {/each}
         
 

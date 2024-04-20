@@ -2,7 +2,7 @@
     import Schaud from "./Schaud.svelte";
     import Knob from './Knob.svelte';
 
-    let {sel,needle_uplink,on_reselection,chunk_length} = $props()
+    let {sel,needle_uplink,on_reselection,chunk_length,duration} = $props()
 
     let playlets = $state([])
     $effect(() => {
@@ -47,6 +47,7 @@
         selout = out_time
         console.log(" <- inout_time")
     })
+    let minimum_loop_duration = 4
     $effect(() => {
         if (selmo) {
             // move the whole selection
@@ -55,8 +56,27 @@
             // gets reset to 0
             selmo = 0
         }
-        if (selin + 4 > selout) {
-            selout = selin + 4
+        // in before start
+        if (selin < 0) {
+            selin = 0
+        }
+        // in > out
+        // < should selin be like selmo?
+        if (selin + minimum_loop_duration > selout) {
+            selout = selin + minimum_loop_duration
+        }
+        // out beyond end
+        if (duration != null && selout > duration) {
+            console.log(`Too far out: ${selout} > ${duration}`)
+            selout = duration
+            // then selin may be too far as well
+            if (selin + minimum_loop_duration > selout) {
+                selin = selout - minimum_loop_duration
+                // but not if before start (tiny file?)
+                if (selin < 0) {
+                    selin = 0
+                }
+            }
         }
 
         in_time = selin
