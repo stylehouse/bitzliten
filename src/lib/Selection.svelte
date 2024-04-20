@@ -40,6 +40,7 @@
     let selin = $state()
     let selout = $state()
     let selmo = $state(0)
+    let selmo_was = 0
     // push to sel
     let nomore = 0
     $effect(() => {
@@ -47,31 +48,25 @@
         selout = out_time
         console.log(" <- inout_time")
     })
-    let minimum_loop_duration = 4
+    let min_loop_duration = 4
     $effect(() => {
-        if (selmo) {
-            // move the whole selection
-            selin += selmo*1
-            selout += selmo*1
-            // gets reset to 0
-            selmo = 0
-        }
+        selmo && add_selmo(selmo)
         // in before start
         if (selin < 0) {
             selin = 0
         }
         // in > out
         // < should selin be like selmo?
-        if (selin + minimum_loop_duration > selout) {
-            selout = selin + minimum_loop_duration
+        if (selin + min_loop_duration > selout) {
+            selout = selin + min_loop_duration
         }
         // out beyond end
         if (duration != null && selout > duration) {
             console.log(`Too far out: ${selout} > ${duration}`)
             selout = duration
             // then selin may be too far as well
-            if (selin + minimum_loop_duration > selout) {
-                selin = selout - minimum_loop_duration
+            if (selin + min_loop_duration > selout) {
+                selin = selout - min_loop_duration
                 // but not if before start (tiny file?)
                 if (selin < 0) {
                     selin = 0
@@ -83,22 +78,25 @@
         out_time = selout
         console.log("inout_time <- ")
     })
-    function push_to_sel() {
-        
-        let o = {in:selin,out:selout}
-        console.log("Shaud -> sel",o)
-        
-        // selin = selin
-        // selout = selout
-        let selo = Object.assign({},sel)
-        delete selo.playlets
-        magic = JSON.stringify([selo,o])
-
-        setTimeout(() => {
-            // sel.input(o)
-        },1000)
+    function add_selmo() {
+        // difference from last tiny adjustment
+        //  during a single grasp of the Knob
+        let move = selmo - selmo_was
+        selmo_was = selmo
+        // move the whole selection
+        selin += move*1
+        selout += move*1
     }
-    // pull from sel
+    function commit() {
+        // re-center selmo when let go
+        selmo = 0
+        selmo_was = 0
+    }
+
+
+    
+
+    // < GOING from here on..?
     let precise = $state('')
     let wert = {}
     let unwert = (s,k) => {
@@ -114,20 +112,6 @@
         if (unwert(sel.out) && sel.out != selout) {
             console.log(`Schaud <- sel.out: ${selout} <- ${sel.out}`)
             
-        }
-        return
-        if (sel?.out) {
-            sel_adjustable = true
-            setTimeout(() => {
-                if (selin != sel.in) selin = sel.in
-                if (selout != sel.out) selout = sel.out
-            },10)
-            // precise = sel.start +' -- '+ sel.end
-            let o = {in:selin,out:selout}
-            console.log("Shaud <- sel",o)
-        }
-        else {
-            console.error("No sel.out")
         }
     })
     const obj = {
@@ -160,11 +144,11 @@
                     in
                     <Knob min={sel.in-10} max={sel.in+10} 
                         bind:value={selin}
-                        commit={push_to_sel} ></Knob>
+                        {commit} ></Knob>
                     move
                     <Knob min={-30} max={+30} 
                         bind:value={selmo}
-                        commit={push_to_sel} ></Knob>
+                        {commit} ></Knob>
                     @ {precise}
                 </span>
             {/snippet}
@@ -173,7 +157,7 @@
                     out
                     <Knob min={sel.out-10} max={sel.out+10} 
                     bind:value={selout}
-                    commit={push_to_sel} ></Knob>
+                    {commit} ></Knob>
                 </span>
             {/snippet}
         </Schaud>
