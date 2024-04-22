@@ -48,9 +48,31 @@
         selout = out_time
         console.log(" <- inout_time")
     })
-    let min_loop_duration = 4
     $effect(() => {
-        selmo && add_selmo(selmo)
+        selmo && add_selmo()
+        range_sanity()
+
+        in_time = selin
+        out_time = selout
+        console.log("inout_time <- ")
+    })
+    function add_selmo() {
+        // difference from last tiny adjustment
+        //  during a single grasp of the Knob
+        let move = selmo - selmo_was
+        selmo_was = selmo
+        // move the whole selection
+        selin += move*1
+        selout += move*1
+    }
+    function commit() {
+        // re-center selmo when let go
+        selmo = 0
+        selmo_was = 0
+    }
+
+    let min_loop_duration = 4
+    function range_sanity() {
         // in before start
         if (selin < 0) {
             selin = 0
@@ -73,28 +95,8 @@
                 }
             }
         }
-
-        in_time = selin
-        out_time = selout
-        console.log("inout_time <- ")
-    })
-    function add_selmo() {
-        // difference from last tiny adjustment
-        //  during a single grasp of the Knob
-        let move = selmo - selmo_was
-        selmo_was = selmo
-        // move the whole selection
-        selin += move*1
-        selout += move*1
-    }
-    function commit() {
-        // re-center selmo when let go
-        selmo = 0
-        selmo_was = 0
     }
 
-
-    
 
     // < GOING from here on..?
     let precise = $state('')
