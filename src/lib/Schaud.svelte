@@ -4,6 +4,7 @@
     import { fetch,dec } from "./FFgemp"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
     import Pointer from './Pointer.svelte';
+    import Cuelets from './ui/Cuelets.svelte';
 
     let {
         playlets,
@@ -422,11 +423,13 @@
             {@render leftend(width_per_s)}
         </span>
 
+        <Cuelets {cuelets} {cuelet_class} {cuelet_info} />
         {#each cuelets as cuelet (cuelet.in)}
+        <!-- transition:scale -->
             <soundbox 
-                transition:scale
                 class={cuelet_class(cuelet)}
-                bind:this={cuelet.el} >
+                bind:this={cuelet.el}
+                >
                 &nbsp; {cuelet_info(cuelet)}
             </soundbox>
         {/each}
