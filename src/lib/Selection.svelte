@@ -41,13 +41,14 @@
     let selout = $state()
     let selmo = $state(0)
     let selmo_was = 0
-    // push to sel
     let nomore = 0
+    // pull to Knobs
     $effect(() => {
         selin = in_time
         selout = out_time
         console.log(" <- inout_time")
     })
+    // push to sel
     $effect(() => {
         selmo && add_selmo()
         range_sanity()

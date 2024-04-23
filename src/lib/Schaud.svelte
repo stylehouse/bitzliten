@@ -2,9 +2,11 @@
     import { tweened } from 'svelte/motion';
 	import { fade,scale } from 'svelte/transition';
     import { fetch,dec } from "./FFgemp"
+    import { Cueleter } from "./cuelets"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
     import Pointer from './Pointer.svelte';
     import Cuelets from './ui/Cuelets.svelte';
+    import { untrack } from 'svelte';
 
     let {
         playlets,
@@ -27,21 +29,10 @@
 
 // playlets -> cuelets
     $effect(() => {
-        // < buffering
-        console.log("SYNC CLUELETS")
-        init_sel('pre')
-        sync_cuelets(playlets)
-        init_sel('post')
+        sync_cuelets(cuelets,playlets)
     })
-    function init_sel(whence) {
-        if (!playlets[0]) return
-        let eg = {in: playlets[0].in,out: playlets.slice(-1)[0].out}
-        if (sel.in != eg.in || sel.out != eg.out) {
-            console.log("sel != playlets "+whence+": ",{sel,eg})
-        }
-    }
-
-    function sync_cuelets(playlets) {
+    function sync_cuelets(cuelets,playlets) {
+        console.log("SYNC CLUELETS")
         let tr = transact_goners(cuelets)
         let unhad:acuelet[] = cuelets.slice()
         playlets.map((playlet:adublet) => {
@@ -105,6 +96,9 @@
     // we can start playing cuelets before they all have
     async function decodeAudio(cuelet) {
         if (!cuelet.objectURL) return
+
+        if (untrack(() => cuelet.buffer)) return
+
         let buf = await fetch(cuelet.objectURL)
         // our fetch() returns a Uint8Array!
         let res = new Response(buf)
