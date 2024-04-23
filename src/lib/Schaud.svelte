@@ -19,113 +19,18 @@
 
     // figures approach,
     let cuelets = $state([])
-    // the firstmost in and lastmost out of playlets
-    // let sel
-    // the mixer
+    let orch
     let audioContext:AudioContext
     $effect(() => {
-        audioContext = new AudioContext()
+        orch = new Cueleter({cuelets,sel,needle_uplink})
+        audioContext = orch.audioContext
     })
 
-// playlets -> cuelets
+    // playlets -> cuelets
     $effect(() => {
-        sync_cuelets(cuelets,playlets)
+        orch.sync_cuelets(playlets)
+        // cuelets = orch.cuelets
     })
-    function sync_cuelets(cuelets,playlets) {
-        console.log("SYNC CLUELETS")
-        let tr = transact_goners(cuelets)
-        let unhad:acuelet[] = cuelets.slice()
-        playlets.map((playlet:adublet) => {
-            let cuelet:any = cuelets.find((cuelet) => cuelet.in == playlet.in)
-            if (cuelet) {
-                tr.keep(cuelet)
-            }
-            else {
-                // create it
-                cuelet = {in:playlet.in,out:playlet.out}
-                cuelets.push(cuelet)
-            }
-            sync_cuelet(cuelet,playlet)
-        })
-        tr.done()
-        // and put them in the right order
-        cuelets = cuelets.sort((a,b) => a.in - b.in)
-    }
-    // maintain|whittle an array
-    //  removing items without keep(z) before done().
-    // you may push more in meanwhile
-    function transact_goners(N) {
-        let unhad = N.slice()
-        return {
-            keep: (z) => {
-                unhad = unhad.filter(s => s != z)
-            },
-            done: (z) => {
-                let deletes = unhad.map((gone) => {
-                    let i = N.indexOf(gone)
-                    if (i < 0) throw "gone goner"
-                    return i
-                })
-                deletes.reverse().map(i => N.splice(i,1))
-            },
-        }
-    }
-    // it may have just been created
-    function sync_cuelet(cuelet:acuelet,playlet:adublet) {
-        // link to origin
-        cuelet.playlet = playlet
-        // find playable
-        let dublet = playlet.ideal_dub || playlet.vague_dub
-        cuelet.objectURL = dublet?.objectURL
-        // < doing this already (we ) stops the first player playing. wtf
-        // else if (playlet.objectURL) {
-        //     cuelet.objectURL = playlet.objectURL
-        // }
-        // intime|outtime start from 0
-        localise_time(cuelet)
-        decodeAudio(cuelet)
-    }
-    // map the in|out points (datum from start of the track)
-    //  to time, which starts at 0
-    function localise_time(cuelet) {
-        if (sel.in == null) throw "!sel.in"
-        cuelet.intime = cuelet.in - sel.in;
-        cuelet.outtime = cuelet.out - sel.in;
-    }
-    // convert objectURL to buffer
-    // we can start playing cuelets before they all have
-    async function decodeAudio(cuelet) {
-        if (!cuelet.objectURL) return
-
-        if (untrack(() => cuelet.buffer)) return
-
-        let buf = await fetch(cuelet.objectURL)
-        // our fetch() returns a Uint8Array!
-        let res = new Response(buf)
-        let blob = await res.arrayBuffer()
-        // some kind of bad data happens when <1k
-        // < find out what exactly. seeking off the end of the source?
-        if (blob.byteLength < 1000) {
-            console.warn("Bad dub")
-            needle_uplink.bad_playlet(cuelet.playlet)
-            let decode_error
-            try {
-                cuelet.buffer = await audioContext.decodeAudioData(blob)
-            }
-            catch(er) {
-                decode_error = er
-            }
-            // always happens when buffer <1k
-            if (!decode_error) debugger
-            if (!decode_error.message.includes('Unable to decode audio data')) debugger
-            console.error("cuelet <1k: ",{cuelet,buf,res,blob,decode_error})
-            // we will fail to play until re-dubbed
-            return
-        }
-        // < flipping the order of these next two lines always makes .blob_size=0 wtf
-        cuelet.blob_size = blob.byteLength
-        cuelet.buffer = await audioContext.decodeAudioData(blob)
-    }
     // handles wraparound
     function next_cuelet(cuelet) {
         let i = cuelets.indexOf(cuelet)
@@ -417,7 +322,7 @@
             {@render leftend(width_per_s)}
         </span>
 
-        <Cuelets {cuelets} {cuelet_class} {cuelet_info} />
+        <!-- <Cuelets {cuelets} {cuelet_class} {cuelet_info} /> -->
         {#each cuelets as cuelet (cuelet.in)}
         <!-- transition:scale -->
             <soundbox 
