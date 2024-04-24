@@ -6,7 +6,7 @@
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
     import Pointer from './Pointer.svelte';
     import Cuelets from './ui/Cuelets.svelte';
-    import { untrack } from 'svelte';
+    import { onDestroy, untrack } from 'svelte';
 
     let {
         playlets,
@@ -42,6 +42,15 @@
         return one
     }
 
+    let modus = $state([])
+    // our default thing to do
+    modus[0] = {t:'through',cuelet_seq:0}
+    
+    function newSpasm() {
+        let con = orch.spasm_control = {}
+        orch.spasm({modus,con})
+    }
+    onDestroy(() => orch.spasm_control = {})
 
 
 
@@ -51,7 +60,9 @@
         if (cuelets[0]?.buffer) ready = 1
     })
     $effect(() => {
+        console.log("Ready!")
         if (ready) scheduleNextSound()
+        if (ready) newSpasm()
     })
     function thump_machinery() {
         if (cuenow && cuenow.source) delete cuenow.source

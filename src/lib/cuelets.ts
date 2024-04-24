@@ -4,13 +4,7 @@ import { fetch,dec } from "./FFgemp"
 import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
 
 
-export class Cueleter {
-    constructor({cuelets,sel,needle_uplink}) {
-        this.cuelets = cuelets
-        this.sel = sel
-        this.needle_uplink = needle_uplink
-        this.audioContext = new AudioContext()
-    }
+class SyncableCueleter {
     sync_cuelets(playlets) {
         console.log("SYNC CLUELETS")
         let tr = transact_goners(this.cuelets)
@@ -92,9 +86,49 @@ export class Cueleter {
         cuelet.buffer = await this.audioContext.decodeAudioData(blob)
     }
 }
+class SpasmableCueleter extends SyncableCueleter {
+    // now manage a slight queue of things to listen to
+    spasm({modus,con,fed={}}): void {
+        if (con != this.spasm_control) return console.log("spasm--")
+        fed ||= {}
+        let def  = {}
+
+        // they may will to come back at certain times
+        let nexttimes = [0.5]
+        modus.map(mo => {
+            if (mo.cuelet_seq != null) {
+                console.log("Gotint ")
+            }
+        })
+        comeback(() => this.spasm({modus,con,fed:def}), nexttimes)
+    }
+}
+export class Cueleter extends SpasmableCueleter {
+    public cuelets:object[]
+    public sel:object
+    public needle_uplink:null|object
+
+    public spasm_control:null|object
+
+    constructor({cuelets,sel,needle_uplink}) {
+        super()
+        this.cuelets = cuelets
+        this.sel = sel
+        this.needle_uplink = needle_uplink
+        this.audioContext = new AudioContext()
+    }
+}
 
 // f
-
+    // comeback
+    function comeback(cb,time) {
+        if (typeof time == 'object') {
+            // a list of times we need to be back
+            //  assumes attending the first one regenerates the set
+            time = Math.min(...time)
+        }
+        setTimeout(cb,time*1000)
+    }
 
     // maintain|whittle an array
     //  removing items without keep(z) before done().
