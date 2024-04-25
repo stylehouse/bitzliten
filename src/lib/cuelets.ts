@@ -7,9 +7,10 @@ import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
 class SyncableCueleter {
     // the ! stop ts error about not being defined in the
     //  constructor (which doesn't exist on this base class)
-    public cuelets!:object[]
+    public cuelets!:acuelet[]
     public sel!:object
     public needle_uplink!: null | object
+    public audioContext!: null | object
 
     sync_cuelets(playlets) {
         console.log("SYNC CLUELETS")
@@ -114,46 +115,165 @@ class SpasmableCueleter extends SyncableCueleter {
         fed ||= {}
         // they may will to come back at certain times
         let def  = {nexttime:0.5}
+        let the_comeback = (delay) => {
+            
+        }
+        def.comebackin = (time) => {
+            def.nexttime = Math.min(def.nexttime,time)
+        }
+        // from async time
+        def.comeback = (etc) => {
+            this.spasm({modus,con,fed:def}
+        }
 
-        modus.map(mo:amo => {
-            // each modus has a fader
-            mo.feed = new ModusFeed({orch:this})
-            // and some scheme for scheduling schedulets
-            if (mo.cuelet_seq != null) {
-                this.spasm_cuelet_seq({mo,def})
+        modus.map((mo:Modus) => {
+            if (!mo.orch) {
+                // mo gets made orch exists, so introduce them
+                mo.hello({orch:this})
             }
+
+            // and some scheme for scheduling Ziplets
+            // < they want c.go fed in somehow, per mo
+            mo.attend({def,fed})
         })
         comeback(() => this.spasm({modus,con,fed:def}), def.nexttime)
     }
+}
 
-    // for sweeping through cuelets in sequence
-    spasm_cuelet_seq({mo,def,c={}}): void {
-        if (!this.cuelets[0]) debugger
+// base class of mode
+class Modus {
+    public orch:Cueleter
+    public feed:ModusFeed
+    constructor() {}
+    // mo gets made before orch exists, so introduce them
+    hello({orch}) {
+        this.orch = orch
+        // each modus has a fader
+        this.gain = this.orch.audioContext.createGain();
+        this.gain.connect(this.orch.audioContext.destination)
+    }
+}
+// for sweeping through cuelets in sequence
+export class ModusCueletSeq extends Modus {
+    // the most present source material
+    public cuenow:acuelet
+    // the most present bit of sound
+    public zip:Ziplet
 
-        // c.go may be passed in
-        if (!mo.cuenow) c.go = 1
+    attend({def,c={}}) {
+        if (!this.orch.cuelets[0]) debugger
+
+        // c.go may be passed in|along
+        if (!this.cuenow) c.go = 1
         if (c.go) {
-            mo.cuenow = this.next_cuelet(mo.cuenow)
-            // < engage a sound from this cuelet
-            //   under a schedulet
+            this.cuenow = this.orch.next_cuelet(this.cuenow)
+            this.go_cuenow({def,c})
         }
     }
 
-}
+    go_cuenow({def,c}) {
+        if (!this.cuenow?.buffer) return console.warn("!ModusCueletSeq.cuenow.buffer",this)
+        this.zip = new Ziplet({orch:this.orch, mo:this, cuelet:this.cuenow})
+        // crossfade from last
+        if (c.fadein) {
+            fadein(this.zip,c.fadein)
+        }
+        // play
+        this.zip.start()
 
-class ModusFeed {
-    public orch
-    public gain
-    constructor({orch}) {
-        this.orch = orch
-        this.gain = this.orch.audioContext.createGain();
-        this.gain.connect(audioContext.destination)
+        this.plan_crossfade({def,c})
+    }
+
+    plan_crossfade({def,c}) {
+        let cuenow = this.cuenow
+        let cuenext = this.orch.next_cuelet(cuenow)
+        let continuity = cuenext.in == cuenow.out
+        
+
+        if (!continuity) {
+            // crossfading discontinuity, probably from looping
+            // the next thing might not be buffered yet!
+            let duration = source.buffer?.duration || 2000
+            let left = duration - fadetime
+            return console.log("Wanna comeback in "+left)
+            
+            setTimeout(() => {
+                // this may occur after a cuelets[] rearrangement
+                if (cuelet != cuenow) return console.warn("give up scheduleNextSound() control")
+                // this will go back to [0] if no such cuenow
+                cuenext = next_cuelet(cuenow)
+                cuelet.source.fadeout(fadetime)
+                needle.opacity.set(0,{duration:fadetime*1000})
+                cuenow = cuenext
+                def.comeback(0,{c:{fadein:fadetime}})
+                // scheduleNextSound({fadein:fadetime})
+            },left * 1000)
+        }
+
+
+        source.onended = () => {
+            // if nobody else (crossfading, ~cuelets) has altered cuenow since we started
+            // cuenext will already be cuenow|playing if crossfading
+            if (this.cuenow == cuenow) {
+                def.comeback(0,{c:{go:1}})
+            }
+        };
     }
 }
 
+let fadetime = 1.5
+// some sound to play, and when
+class Ziplet {
+    public orch:Cueleter
+    public mo:Modus
+
+    public gain
+    // in the Web Audio sense
+    public source
+    // .buffer comes from
+    public cuelet
+    public duration:number
+
+    constructor({orch,mo,cuelet}) {
+        this.orch = orch
+        this.mo = mo
+        // each ziplet fades into modus
+        this.gain = this.orch.audioContext.createGain();
+        this.gain.connect(this.mo.gain)
+
+        // < input could also be the source file itself?
+        cuelet && this.load_cuelet(cuelet)
+    }
+    // 1:1 with cuelet brings the buffer, duration
+    // < and relativity to selection
+    load_cuelet(cuelet) {
+        this.cuelet = cuelet
+        this.source = this.orch.audioContext.createBufferSource()
+        this.source.buffer = this.cuelet.buffer
+        this.duration = this.source.buffer.duration
+        if (!this.duration) debugger
+    }
+    start(at) {
+        let time = this.orch.audioContext.currentTime
+        this.cuelet.startTime = time
+        this.source.start(time);
+    }
+}
+
+// these?
+function fade(zip,sudden_val,thence_val,fadetime:number) {
+    let time = zip.orch.audioContext.currentTime
+    zip.gain.setValueAtTime(sudden_val, time);
+    zip.gain.linearRampToValueAtTime(thence_val, time + fadetime);
+}
+function fadein(zip,fadetime) {
+    fade(0,1,fadetime)
+}
+function fadeout(zip,fadetime) {
+    fade(1,0,fadetime)
+}
+
 export class Cueleter extends SpasmableCueleter {
-
-
     constructor({cuelets,sel,needle_uplink}) {
         super()
         this.cuelets = cuelets

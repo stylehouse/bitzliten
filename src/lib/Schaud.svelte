@@ -2,7 +2,7 @@
     import { tweened } from 'svelte/motion';
 	import { fade,scale } from 'svelte/transition';
     import { fetch,dec } from "./FFgemp"
-    import { Cueleter } from "./cuelets"
+    import { Cueleter, ModusCueletSeq } from "./cuelets"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
     import Pointer from './Pointer.svelte';
     import Cuelets from './ui/Cuelets.svelte';
@@ -43,7 +43,7 @@
 
     let modus = $state([])
     // our default thing to do
-    modus[0] = {t:'through',cuelet_seq:0}
+    modus[0] = new ModusCueletSeq()
     
     function newSpasm() {
         let con = orch.spasm_control = {}
@@ -74,6 +74,7 @@
     let cuenow:null|adublet = null
     // a new cuenow needs to .source and .play()
     function scheduleNextSound(c?) {
+        return
         c ||= {}
         let remarks = []
         // some weird time to avoid.
