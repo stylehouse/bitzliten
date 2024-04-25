@@ -29,7 +29,6 @@
     // playlets -> cuelets
     $effect(() => {
         orch.sync_cuelets(playlets)
-        // cuelets = orch.cuelets
     })
     // handles wraparound
     function next_cuelet(cuelet) {
@@ -60,7 +59,6 @@
         if (cuelets[0]?.buffer) ready = 1
     })
     $effect(() => {
-        console.log("Ready!")
         if (ready) scheduleNextSound()
         if (ready) newSpasm()
     })

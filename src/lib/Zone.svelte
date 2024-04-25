@@ -78,43 +78,40 @@
                 Object.assign(sel,c)
             }
         })
-        // in:40,out:46
-        // // copies to modes after this
-        // sel_dominant = true
-        // // knows how to apply changes
-        // sel.input = (o) => sel_input(o)
-        // // input itself to create the fine-grained layer start|end
-        // sel_input(sel)
     }
     
 
-    // these in|out or start|end come from yonder
-    async function sel_input(o) {
-        let was = {in:sel.in,out:sel.out}
-        // make a fine-grained layer
-        let fel = {}
-        fel.start = o.in
-        fel.end = o.out
-        // inclusively select dublet spaces
-        fel.in = Math.floor(fel.start / chunk_length) * chunk_length
-        fel.out = Math.ceil(fel.end / chunk_length) * chunk_length
+    // MediaMetadata
+    // < supposing this is for nowplaying info for the browser|platform?
+    //   doesn't work for me - a speaker icon appears on the tab
+    //    but the browser's two-notes music icon for media control doesn't include it
+    //    this might be because of no https?
+    $effect(() => {
+        let meta = fileinfo?.meta
+        if (!meta) return
 
-        Object.assign(sel,fel)
-        if (was.in != fel.in || was.out != fel.out) {
-            sel_to_modes()
-            letsgo()
+        console.log("Pushing  MediaMetadata",fileinfo)
+
+        // Create a MediaMetadata object
+        const mediaMetadata = new MediaMetadata({
+            title: meta.title??'',
+            artist: meta.artist??'',
+            album: meta.album??'',
+            // < look for a jpeg stream, transcode it out?
+            // artwork: [
+            // {
+            //     src: 'path/to/album-art.jpg',
+            //     sizes: '512x512',
+            //     type: 'image/jpeg',
+            // },
+            // ],
+        });
+        
+        // Set the mediaSession metadata
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = mediaMetadata;
         }
-        return console.log(`resists sel input`,o)
-    }
-
-    // let le
-    // ~sel -> modes
-    // $effect(() => {
-    //     let see = sel.in
-    //     // < this must be done, or the log() never happens, wtf
-    //     le = see
-    //     console.log("~sel ",sel)
-    // })
+    })
 
 
     // sel -> modes
