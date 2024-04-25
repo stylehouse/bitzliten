@@ -1,38 +1,17 @@
-# create-svelte
+# bitzliten
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+Plays audio loops, mainly to listen test low opus bitrates.
 
-## Creating a project
+![the loop, as a series of gold blocks, with a hand transparently behind them pointing to where time is up to along them](static/screenshot.webp)
 
-If you're seeing this, you've probably already done this step. Congrats!
+# TODO
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
-
-# create a new project in my-app
-npm create svelte@latest my-app
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```bash
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```bash
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+* ffmpeg-wasm or ffmpeg via http
+* click seek
+* knob seek, virtual radio for vast collections
+* visual on the track
+* other use cases for the same gear, eg:
+  * music intelligence (key|rhythm)
+  * live looping
+  * editing stop-motion films
+  * editing film

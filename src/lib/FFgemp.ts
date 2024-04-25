@@ -115,6 +115,14 @@ export class FFgemp {
     }
 
     async init() {
+        // warn about problems that may occur
+		if (!crossOriginIsolated) {
+			console.warn("crossOriginIsolated is false: configure Cross-Origin-(Opener|Embedder)-Policy")
+		}
+		if (typeof SharedArrayBuffer == 'undefined') {
+			console.warn("SharedArrayBuffer is false: is crossOriginIsolated false?")
+		}
+        
         this.ffmpeg = new FFmpeg();
         this.m("Loading ffmpeg.wasm");
         let baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm";
