@@ -3,8 +3,14 @@ import { untrack } from "svelte"
 import { fetch,dec } from "./FFgemp"
 import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
 
-
+// a [cuelet+] represents a sequence of chunks of the media we encoded
 class SyncableCueleter {
+    // the ! stop ts error about not being defined in the
+    //  constructor (which doesn't exist on this base class)
+    public cuelets!:object[]
+    public sel!:object
+    public needle_uplink!: null | object
+
     sync_cuelets(playlets) {
         console.log("SYNC CLUELETS")
         let tr = transact_goners(this.cuelets)
@@ -85,30 +91,68 @@ class SyncableCueleter {
         cuelet.blob_size = blob.byteLength
         cuelet.buffer = await this.audioContext.decodeAudioData(blob)
     }
-}
-class SpasmableCueleter extends SyncableCueleter {
-    // now manage a slight queue of things to listen to
-    spasm({modus,con,fed={}}): void {
-        if (con != this.spasm_control) return console.log("spasm--")
-        fed ||= {}
-        let def  = {}
 
-        // they may will to come back at certain times
-        let nexttimes = [0.5]
-        modus.map(mo => {
-            if (mo.cuelet_seq != null) {
-                console.log("Gotint ")
-            }
-        })
-        comeback(() => this.spasm({modus,con,fed:def}), nexttimes)
+    // handles wraparound
+    next_cuelet(cuelet) {
+        let i = this.cuelets.indexOf(cuelet)
+        if (i < 0) {
+            // is fine, will go back to the start when file changes
+        }
+        let one = this.cuelets[i+1] || this.cuelets[0]
+        if (!one) throw "no next!"
+        return one
     }
 }
-export class Cueleter extends SpasmableCueleter {
-    public cuelets:object[]
-    public sel:object
-    public needle_uplink:null|object
+type amo = {feed:ModusFeed}
+class SpasmableCueleter extends SyncableCueleter {
+    public spasm_control!:null|object
+    
+    // now manage a slight queue of things to listen to
+    // we attend this regularly
+    spasm({modus,con,fed={}}): void {
+        if (con != this.spasm_control) return
+        fed ||= {}
+        // they may will to come back at certain times
+        let def  = {nexttime:0.5}
 
-    public spasm_control:null|object
+        modus.map(mo:amo => {
+            // each modus has a fader
+            mo.feed = new ModusFeed({orch:this})
+            // and some scheme for scheduling schedulets
+            if (mo.cuelet_seq != null) {
+                this.spasm_cuelet_seq({mo,def})
+            }
+        })
+        comeback(() => this.spasm({modus,con,fed:def}), def.nexttime)
+    }
+
+    // for sweeping through cuelets in sequence
+    spasm_cuelet_seq({mo,def,c={}}): void {
+        if (!this.cuelets[0]) debugger
+
+        // c.go may be passed in
+        if (!mo.cuenow) c.go = 1
+        if (c.go) {
+            mo.cuenow = this.next_cuelet(mo.cuenow)
+            // < engage a sound from this cuelet
+            //   under a schedulet
+        }
+    }
+
+}
+
+class ModusFeed {
+    public orch
+    public gain
+    constructor({orch}) {
+        this.orch = orch
+        this.gain = this.orch.audioContext.createGain();
+        this.gain.connect(audioContext.destination)
+    }
+}
+
+export class Cueleter extends SpasmableCueleter {
+
 
     constructor({cuelets,sel,needle_uplink}) {
         super()
