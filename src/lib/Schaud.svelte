@@ -67,6 +67,10 @@
         cuenow = null
         ready = ready + 1
         scheduleNextSound()
+        modus.map(mo => {
+            delete mo.cuenow
+        })
+        newSpasm()
     }
     let fadetime = 1.5
     let upto = $state(0)
