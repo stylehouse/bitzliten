@@ -258,8 +258,6 @@ class Ziplet {
         this.source.buffer = this.cuelet.buffer
         this.duration = this.source.buffer.duration
         if (!this.duration) debugger
-        // < why no sound?
-        // this.source.connect(this.orch.audioContext.destination)
         this.source.connect(this.gain)
     }
     start(at) {

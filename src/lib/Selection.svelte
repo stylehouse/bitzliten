@@ -11,8 +11,8 @@
 
     // accept adjustments, may quickly adjust play
     //  set into an object owned by Zone...
-    let in_time = $state(50)
-    let out_time = $state(56)
+    let in_time = $state(30)
+    let out_time = $state(36)
     sel.set({
         in_time,
         out_time,
