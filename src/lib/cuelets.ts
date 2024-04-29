@@ -106,6 +106,10 @@ class SyncableCueleter {
 }
 class SpasmableCueleter extends SyncableCueleter {
     public spasm_control!:null|object
+    get time() {
+        let time = this.audioContext.currentTime
+        return time
+    }
     
     // now manage a slight queue of things to listen to
     // we attend this regularly
@@ -176,11 +180,8 @@ export class ModusCueletSeq extends Modus {
 
     go_cuenow({def,c}) {
         if (!this.cuenow?.buffer) return console.warn("!ModusCueletSeq.cuenow.buffer",this)
+        // this one time we play this cuelet
         this.zip = new Ziplet({orch:this.orch, mo:this, cuelet:this.cuenow})
-        // crossfade from last
-        if (c.fadein) {
-            fadein(this.zip,c.fadein)
-        }
         // play
         this.zip.start()
 
@@ -199,17 +200,17 @@ export class ModusCueletSeq extends Modus {
         if (!continuity) {
             // crossfading discontinuity, probably from looping
             // the next thing might not be buffered yet!
-            let duration = zip.source.buffer?.duration || 2000
+            let duration = zip.duration || 2000
             let left = duration - fadetime
             // return console.log("Wanna comeback in "+left)
             
             // < can this become a persistent assertion?
-            //    ie created by the latest possible attend()
+            //    ie created every time
+            //     actioned by the last possible attend()
             setTimeout(() => {
                 if (still_in_control()) {
-                    fadeout(zip,fadetime)
                     // needle.opacity.set(0,{duration:fadetime*1000})
-                    this.next_c = {go:1,fadein:fadetime}
+                    this.next_c = {go:1}
                     def.comeback()
                     // scheduleNextSound({fadein:fadetime})
                 }
@@ -227,49 +228,84 @@ export class ModusCueletSeq extends Modus {
     }
 }
 
+// < should be part of sel
 let fadetime = 1.5
-// some sound to play, and when
+// some sound to play
 class Ziplet {
     public orch:Cueleter
     public mo:Modus
+    // one we replace on mo
+    public fade_in_over_zip:Ziplet
 
     public gain
     // in the Web Audio sense
     public source
     // .buffer comes from
     public cuelet
-    public duration:number
+
+    get duration():number {
+        let dur = this.source?.buffer?.duration
+        if (dur == null) throw "!duration"
+        return dur
+    }
+    get ends_at() {
+        if (this.cuelet.startTime == null) throw "!startTime"
+        return this.cuelet.startTime + this.duration
+    }
+    get time_left() {
+        let time = this.orch.time
+        let left = this.ends_at - this.orch.time
+        if (left < 0) left = 0
+        return left
+    }
 
     constructor({orch,mo,cuelet}) {
         this.orch = orch
         this.mo = mo
-        // each ziplet fades into modus
+        // each ziplet feeds into modus
         this.gain = this.orch.audioContext.createGain();
         this.gain.connect(this.mo.gain)
 
         // < input could also be the source file itself?
         cuelet && this.load_cuelet(cuelet)
+
+        // we may fade over the rest of whatever is playing
+        if (mo.zip) this.fade_in_over_zip = mo.zip
     }
-    // 1:1 with cuelet brings the buffer, duration
+    // cuelet brings the buffer, duration
     // < and relativity to selection
     load_cuelet(cuelet) {
         this.cuelet = cuelet
         this.source = this.orch.audioContext.createBufferSource()
         this.source.buffer = this.cuelet.buffer
-        this.duration = this.source.buffer.duration
         if (!this.duration) debugger
         this.source.connect(this.gain)
     }
-    start(at) {
-        let time = this.orch.audioContext.currentTime
+    start() {
+        let time = this.orch.time
         this.cuelet.startTime = time
-        this.source.start(time);
+        this.source.start(time)
+        let ozip = this.fade_in_over_zip
+        if (ozip) this.fade_in_over(ozip)
+    }
+    fade_in_over(ozip) {
+        // crossfade from last
+        // supposing the fadetime is built in to their current overlap
+        let left = ozip.time_left
+        if (left > this.duration+0.001) {
+            // going to get weird
+            debugger
+        }
+        if (left == 0) return
+        console.log("Crossfading: "+left)
+        fadein(this,left)
+        fadeout(ozip,left)
     }
 }
 
 // these?
 function fade(zip,sudden_val,thence_val,fadetime:number) {
-    let time = zip.orch.audioContext.currentTime
+    let time = zip.orch.time
     zip.gain.gain.setValueAtTime(sudden_val, time);
     zip.gain.gain.linearRampToValueAtTime(thence_val, time + fadetime);
 }
