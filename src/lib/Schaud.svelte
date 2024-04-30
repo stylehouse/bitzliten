@@ -19,7 +19,7 @@
 
     // figures approach,
     let cuelets = $state([])
-    let orch
+    let orch:Cueleter
     let audioContext:AudioContext
     $effect(() => {
         orch = new Cueleter({cuelets,sel,needle_uplink})
@@ -191,33 +191,35 @@
     })
     
     let theone = {}
-    let has_tween = null
     let audio_state = ''
-    function up_displaytime(the) {
+    let up_displaytime =
+    needle_uplink.up_displaytime = (the) => {
         if (the && the != theone) return
         the = theone = {}
         setTimeout(() => up_displaytime(the), 166)
 
+        if (!needle_uplink.stat) return
+        let {cuenow,cue_time,loop_time} = needle_uplink.stat()
         if (!(cuenow && cuenow.el)) return
         
         let length = sel.out - sel.in
-        // a repeating time measure
-        let loop_startTime = cuenow.startTime - cuenow.intime
-        let loop_time = audioContext.currentTime - loop_startTime
+        // GOING a repeating time measure
+        // let loop_startTime = cuenow.startTime - cuenow.intime
+        // let loop_time = audioContext.currentTime - loop_startTime
         displaytime = dec(loop_time)
-        let cue_time = audioContext.currentTime - cuenow.startTime
+        // let cue_time = audioContext.currentTime - cuenow.startTime
 
         check_time_is_passing(cue_time)
-        if (audioContext.state == 'running') needle_moves(cue_time)
+        if (audioContext.state == 'running') needle_moves()
     }
 
-    needle_uplink.stat = () => {
-        if (!cuenow || !cuenow.buffer) return {}
-        let duration = cuenow.buffer.duration
-        let cue_time = audioContext.currentTime - cuenow.startTime
-        let remains = duration - cue_time
-        return {cuenow,remains,cue_time,duration}
-    }
+    // needle_uplink.stat = () => {
+    //     if (!cuenow || !cuenow.buffer) return {}
+    //     let duration = cuenow.buffer.duration
+    //     let cue_time = audioContext.currentTime - cuenow.startTime
+    //     let remains = duration - cue_time
+    //     return {cuenow,remains,cue_time,duration}
+    // }
 
     // tween takes on the duration of the cuelet when .set()
     let needles = $state([
@@ -231,7 +233,9 @@
     })
     // pick the same needle for continuous sets of cuelets
     let whichneedle = 0
-    function find_unused_needle() {
+    // < GOING this var... delete with scheduleNextSound()
+    let find_unused_needle =
+    needle_uplink.find_unused_needle = () => {
         // there are only two
         // < it seems we can't compare needle==needle, because they are different proxy objects?
         let used = cuelets.map(cuelet => cuelet.needle?.id)
@@ -243,28 +247,31 @@
         return ne
     }
 
-    function needle_moves(cue_time) {
+    let has_tween:null|acuelet = null
+    function needle_moves() {
+        let {cuenow,cue_time,loop_time,zip} = needle_uplink.stat()
         // occasionally generate bad data from ffmpeg, eg if seek > file length
-        if (!cuenow.source.buffer) return
+        // if (!zip.source.buffer) return
         // do the rest once per cuenow
         if (has_tween == cuenow) return
         has_tween = cuenow
         // 1-2 needles exist
-        let needle = cuenow.needle
-        if (!needle) return
+        let needle = zip.needle
+        // if (!needle) return
         if (!needle) throw '!needle'
 
         // we come here right after sound.start()
         if (cue_time > 0.05) console.warn("long time to needle_moves: "+cue_time)
 
-        let cueswidth = cuenow.el.offsetWidth
-        let source = cuenow.source
-        let duration = source.buffer.duration
-        let progress = cue_time / source.buffer.duration
-        let some_left = progress * cueswidth
+        let cueletswidth = cuenow.el.offsetWidth
+        let duration = zip.duration
+        let progress = cue_time / duration
+        let some_left = progress * cueletswidth
+        // fade in quickly, politely appear
+        //  clobbered by a longer one for crossfades
         needle.opacity.set(1,{duration:0.2*1000})
         needle.left.set(cuenow.el.offsetLeft*1 + some_left)
-        needle.left.set(cuenow.el.offsetLeft*1 + cueswidth*1,{duration:duration*1000})
+        needle.left.set(cuenow.el.offsetLeft*1 + cueletswidth*1,{duration:duration*1000})
         needle.top.set(cuenow.el.offsetTop)
         // console.log(`needle_moves: @ ${displaytime} \t${progress} of ${dec(duration)}\t`)
         // here we can keep the needle at 0 to align new sprites
@@ -291,7 +298,7 @@
     }
     function start_from_gesture() {
         delete cuenow.source
-        scheduleNextSound()
+        thump_machinery()
     }
 
     function cuelet_class(cuelet) {
