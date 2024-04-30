@@ -30,16 +30,6 @@
     $effect(() => {
         orch.sync_cuelets(playlets)
     })
-    // handles wraparound
-    function next_cuelet(cuelet) {
-        let i = cuelets.indexOf(cuelet)
-        if (i < 0) {
-            // is fine, will go back to the start when file changes
-        }
-        let one = cuelets[i+1] || cuelets[0]
-        if (!one) throw "no next!"
-        return one
-    }
 
     let modus = $state([])
     // our default thing to do
@@ -59,7 +49,6 @@
         if (cuelets[0]?.buffer) ready = 1
     })
     $effect(() => {
-        if (ready) scheduleNextSound()
         if (ready) newSpasm()
     })
     function thump_machinery() {
@@ -75,106 +64,6 @@
     let fadetime = 1.5
     let upto = $state(0)
     type acuelet = adublet & {startTime:number,source,needle,el}
-    let cuenow:null|adublet = null
-    // a new cuenow needs to .source and .play()
-    function scheduleNextSound(c?) {
-        return
-        c ||= {}
-        let remarks = []
-        // some weird time to avoid.
-        if (!cuelets[0]) return
-        // on init
-        cuenow ||= cuelets[0]
-        if (!cuenow) throw "!cuenow"
-        // this shall remain the same for source.onended()'s callback
-        let cuelet = cuenow
-        // one of these while playing
-        if (!cuenow.source) {
-            remarks.push("new")
-            let source = cuenow.source = source_cuelet(cuenow)
-
-            // this will find the same one unless crossfading
-            let needle = cuenow.needle = find_unused_needle()
-            // crossfade from last
-            if (c.fadein) {
-                source.fadein(c.fadein)
-            }
-
-            // play
-            cuenow.startTime = audioContext.currentTime
-            source.start(audioContext.currentTime);
-            up_displaytime()
-            if (c.fadein) {
-                // clobber the default opacity tween to match the fadetime
-                needle.opacity.set(0)
-                needle.opacity.set(1,{duration:fadetime*1000})
-            }
-
-            // crossfade to next
-            let cuenext = next_cuelet(cuenow)
-            if (cuenext.in != cuenow.out) {
-                // discontinuity, probably from looping
-                // the next thing might not be buffered yet!
-                let duration = source.buffer?.duration || 2000
-                let left = duration - fadetime
-                remarks.push("crossfade in "+left)
-                setTimeout(() => {
-                    // this may occur after a cuelets[] rearrangement
-                    if (cuelet != cuenow) return console.warn("give up scheduleNextSound() control")
-                    // this will go back to [0] if no such cuenow
-                    cuenext = next_cuelet(cuenow)
-                    cuelet.source.fadeout(fadetime)
-                    needle.opacity.set(0,{duration:fadetime*1000})
-                    cuenow = cuenext
-                    scheduleNextSound({fadein:fadetime})
-                },left * 1000)
-            }
-
-
-            source.onended = () => {
-                // console.log(`Ends ${cuelet.in} ne:${needle.id}`,cuelets.map(cu => cu.needle))
-                // on the cuelet that was cuenow when it started playing
-                delete cuelet.source
-                delete cuelet.needle
-                // cuenext will already be cuenow and playing (has .source) if crossfading
-                if (cuelet == cuenow) {
-                    // nobody else (crossfading, ~cuelets) has altered cuenow since we started
-                    cuenow = cuenext
-                    scheduleNextSound();
-                }
-            };
-        }
-
-        upto = cuelet.in
-        
-        if (!cuelets.includes(cuenow)) remarks.push("!in")
-        if (cuenow.needle) remarks.push("ne:"+cuenow.needle.id)
-
-        // console.log(`NextSound: ${cuelet.in}  ${dec(audioContext.currentTime)}  ${remarks.join("  ")}`)
-
-
-    }
-    type asource = AudioBufferSourceNode & {fadein:Function,fadeout:Function}
-    function source_cuelet(cuelet:adublet):asource {
-        let source:asource = audioContext.createBufferSource() as asource;
-        source.buffer = cuelet.buffer;
-
-
-        // Create a gain node to control the volume
-        const gain = audioContext.createGain();
-        source.connect(gain);
-        gain.connect(audioContext.destination);
-
-        // fades
-        let fade = (suddenly,thence,fadetime:number) => {
-            gain.gain.setValueAtTime(suddenly, audioContext.currentTime);
-            gain.gain.linearRampToValueAtTime(thence, audioContext.currentTime + fadetime);
-        }
-        source.fadein = (fadetime) => fade(0,1,fadetime)
-        source.fadeout = (fadetime) => fade(1,0,fadetime)
-
-        return source
-    }
     function oscil() {
         const oscillator = audioContext.createOscillator();
         // Set the oscillator type to sine wave
@@ -185,10 +74,9 @@
     }
 
     let displaytime = $state(0)
-    $effect(() => {
-        cuenow
-        up_displaytime()
-    })
+    // $effect(() => {
+    //     up_displaytime()
+    // })
     
     let theone = {}
     let audio_state = ''
@@ -202,24 +90,10 @@
         let {cuenow,cue_time,loop_time} = needle_uplink.stat()
         if (!(cuenow && cuenow.el)) return
         
-        let length = sel.out - sel.in
-        // GOING a repeating time measure
-        // let loop_startTime = cuenow.startTime - cuenow.intime
-        // let loop_time = audioContext.currentTime - loop_startTime
         displaytime = dec(loop_time)
-        // let cue_time = audioContext.currentTime - cuenow.startTime
-
         check_time_is_passing(cue_time)
         if (audioContext.state == 'running') needle_moves()
     }
-
-    // needle_uplink.stat = () => {
-    //     if (!cuenow || !cuenow.buffer) return {}
-    //     let duration = cuenow.buffer.duration
-    //     let cue_time = audioContext.currentTime - cuenow.startTime
-    //     let remains = duration - cue_time
-    //     return {cuenow,remains,cue_time,duration}
-    // }
 
     // tween takes on the duration of the cuelet when .set()
     let needles = $state([
