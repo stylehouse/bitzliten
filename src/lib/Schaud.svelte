@@ -52,10 +52,7 @@
         if (ready) newSpasm()
     })
     function thump_machinery() {
-        if (cuenow && cuenow.source) delete cuenow.source
-        cuenow = null
         ready = ready + 1
-        scheduleNextSound()
         modus.map(mo => {
             delete mo.cuenow
         })

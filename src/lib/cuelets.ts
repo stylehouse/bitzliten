@@ -175,7 +175,7 @@ export class ModusCueletSeq extends Modus {
         // export its progress info to be that of Schaud
         // we use this interface in Zone / prioritise_needs()
         this.orch.needle_uplink.stat = () => {
-            if (!this.cuenow || !this.cuenow.buffer) return {}
+            if (!this.cuenow?.buffer) return {}
             let zip = this.zip
             let duration = zip.duration
             if (duration == null) throw "!duration"
@@ -203,12 +203,27 @@ export class ModusCueletSeq extends Modus {
         if (c.go) {
             this.cuenow = this.orch.next_cuelet(this.cuenow)
             this.go_cuenow({def,c})
-            console.log("Playing "+this.cuenow.in)
+        }
+    }
+
+    check_cuelet_buffer() {
+        if (this.cuenow?.buffer) return
+        // hit a not yet encoded cuelet after changing sel.in|out
+        // < play the sourcetrack meanwhile?
+        let one = this.orch.cuelets.filter(n => n.buffer)[0]
+        if (one) {
+            this.cuenow = one
+        }
+        else {
+            // no cuelets are playable!?
+            delete this.cuenow
+            console.warn("!ModusCueletSeq.cuenow.buffer",this)
+            return true
         }
     }
 
     go_cuenow({def,c}) {
-        if (!this.cuenow?.buffer) return console.warn("!ModusCueletSeq.cuenow.buffer",this)
+        if (this.check_cuelet_buffer()) return
         // this one time we play this cuelet
         this.zip = new Ziplet({orch:this.orch, mo:this, cuelet:this.cuenow})
         // play
@@ -332,6 +347,7 @@ class Ziplet extends NeedleableZiplet {
         this.startTime = time
         this.cuelet.startTime = time
         this.source.start(time)
+        
         // tell animations
         this.adopt_needle()
         this.orch.needle_uplink.up_displaytime()
@@ -348,7 +364,6 @@ class Ziplet extends NeedleableZiplet {
             debugger
         }
         if (left == 0) return
-        console.log("Crossfading: "+left)
         fadein(this,left)
         fadeout(ozip,left)
         if (this.needle) {
@@ -359,7 +374,7 @@ class Ziplet extends NeedleableZiplet {
     }
 }
 // these?
-function fade(zip,sudden_val,thence_val,fadetime:number) {
+function fade(zip:Ziplet,sudden_val:number,thence_val:number,fadetime:number) {
     let time = zip.orch.time
     zip.gain.gain.setValueAtTime(sudden_val, time);
     zip.gain.gain.linearRampToValueAtTime(thence_val, time + fadetime);
