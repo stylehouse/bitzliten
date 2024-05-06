@@ -1,11 +1,10 @@
 <script lang="ts">
     import { tweened } from 'svelte/motion';
 	import { fade,scale } from 'svelte/transition';
-    import { fetch,dec } from "./FFgemp"
+    import { dec } from "./FFgemp"
     import { Cueleter, ModusCueletSeq } from "./cuelets"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
     import Pointer from './Pointer.svelte';
-    import Cuelets from './ui/Cuelets.svelte';
     import { onDestroy, untrack } from 'svelte';
 
     let {
@@ -214,13 +213,19 @@
             {@render leftend(width_per_s)}
         </span>
 
-        <!-- <Cuelets {cuelets} {cuelet_class} {cuelet_info} /> -->
         {#each cuelets as cuelet (cuelet.in)}
         <!-- transition:scale -->
             <soundbox 
                 class={cuelet_class(cuelet)}
                 bind:this={cuelet.el}
                 >
+                {#if cuelet.moodbar}
+                    <moodbar class="liner"
+                        style="background-image:{`url(${cuelet.moodbar})`}"
+                        />
+                    <moodbar class="liner mask"/>
+                {/if}
+                    
                 &nbsp; {cuelet_info(cuelet)}
             </soundbox>
         {/each}
@@ -268,12 +273,27 @@
             color: black;
             border-radius: 1em;
             display: inline-block;
+            position: relative;
         }
         soundbox.unbuffered {
             background-color:rgb(40, 46, 25);
         }
         soundbox.cuenow {
             background-color:lightblue;
+        }
+        .liner {
+            width:100%;
+            height:100%;
+            position:absolute;
+            display:block;
+        }
+        moodbar {
+            background-size: contain;
+            filter: blur(3.14159px);
+        }
+        moodbar.mask {
+            background: url(vertical_mid_fade.webp);
+            mix-blend-mode:soft-light;
         }
         div {
             border: 3px solid rgb(25, 77, 28);

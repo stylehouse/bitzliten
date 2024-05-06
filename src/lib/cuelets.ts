@@ -1,6 +1,6 @@
 
 import { untrack } from "svelte"
-import { fetch,dec } from "./FFgemp"
+import { fetch as ffetch,dec } from "./FFgemp"
 import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
 
 // a [cuelet+] represents a sequence of chunks of the media we encoded
@@ -65,8 +65,8 @@ class SyncableCueleter {
 
         if (untrack(() => cuelet.buffer)) return
 
-        let buf = await fetch(cuelet.objectURL)
-        // our fetch() returns a Uint8Array!
+        let buf = await ffetch(cuelet.objectURL)
+        // our ffetch() returns a Uint8Array!
         let res = new Response(buf)
         let blob = await res.arrayBuffer()
         // some kind of bad data happens when <1k
@@ -91,6 +91,18 @@ class SyncableCueleter {
         // < flipping the order of these next two lines always makes .blob_size=0 wtf
         cuelet.blob_size = blob.byteLength
         cuelet.buffer = await this.audioContext.decodeAudioData(blob)
+
+        this.get_moodbar(cuelet)
+    }
+
+    async get_moodbar(cuelet:acuelet) {
+        let buf = await ffetch(cuelet.objectURL)
+        let res = new Response(buf)
+        let abuf = await res.arrayBuffer()
+        let webpdata = await get_moodbar_webpdata_from_opusdata(abuf)
+        if (webpdata) {
+            cuelet.moodbar = webpdata
+        }
     }
 
     // handles wraparound
@@ -103,6 +115,24 @@ class SyncableCueleter {
         if (!one) throw "no next!"
         return one
     }
+}
+async function get_moodbar_webpdata_from_opusdata(arrayBuffer) {
+    const formData = new FormData();
+    const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+    formData.append('opusdata', blob);
+
+    // < configure this somewhere!?
+    const response = await fetch('http://localhost:8000/moodbar', {
+        method: 'POST',
+        body: formData
+    });
+
+    if (!response.ok) {
+        console.error('Bad response:', response);
+        throw new Error(`Error sending data: ${response.statusText}`);
+    }
+    const imageBlob = await response.blob();
+    return URL.createObjectURL(imageBlob);
 }
 class SpasmableCueleter extends SyncableCueleter {
     public spasm_control!:null|object
