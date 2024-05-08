@@ -222,7 +222,7 @@
             <button onclick={thump_machinery}>thump</button>
             {@render leftend(width_per_s)}
         </span>
-
+{#key ready}
         {#each cuelets as cuelet (cuelet.in)}
         <!-- transition:scale -->
             <soundbox 
@@ -239,7 +239,7 @@
                 &nbsp; {cuelet_info(cuelet)}
             </soundbox>
         {/each}
-
+{/key}
         <span>
             {@render rightend(width_per_s)}
         </span>
