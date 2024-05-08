@@ -122,7 +122,7 @@ async function get_moodbar_webpdata_from_opusdata(arrayBuffer) {
     formData.append('opusdata', blob);
 
     // < configure this somewhere!?
-    const response = await fetch('http://localhost:8000/moodbar', {
+    const response = await fetch('http://localhost:5000/moodbar', {
         method: 'POST',
         body: formData
     });
