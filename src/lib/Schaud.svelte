@@ -24,6 +24,10 @@
         orch = new Cueleter({cuelets,sel,needle_uplink})
         audioContext = orch.audioContext
     })
+    onDestroy(() => {
+        console.log("Destroys Schaud!")
+        audioContext.close()
+    })
 
     // playlets -> cuelets
     $effect(() => {
@@ -57,6 +61,7 @@
         })
         newSpasm()
     }
+
     let fadetime = 1.5
     let upto = $state(0)
     type acuelet = adublet & {startTime:number,source,needle,el}
@@ -166,11 +171,6 @@
         }
         last_cuetime = cue_time
     }
-    function start_from_gesture() {
-        delete cuenow.source
-        thump_machinery()
-    }
-
     function cuelet_class(cuelet) {
         return cuelet.buffer ? '' : 'unbuffered'
     }
@@ -242,7 +242,7 @@
     {/each}
 
     {#if it_seems_not_to_play}
-        <bigdiv transition:scale onclick={start_from_gesture}>
+        <bigdiv transition:scale onclick={thump_machinery}>
             <h1>click here</h1> audio playback requires interaction
         </bigdiv>
     {/if}
@@ -276,7 +276,7 @@
             position: relative;
         }
         soundbox.unbuffered {
-            background-color:rgb(40, 46, 25);
+            filter:sepia(1)
         }
         soundbox.cuenow {
             background-color:lightblue;
