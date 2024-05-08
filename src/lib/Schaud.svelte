@@ -32,6 +32,16 @@
     // playlets -> cuelets
     $effect(() => {
         orch.sync_cuelets(playlets)
+        // cuelets = cuelets
+    })
+    $effect(() => {
+        orch.sync_cuelets(playlets)
+        cuelets.map(cuelet => {
+            cuelet.ping = () => {
+                console.log("Ping'd! "+cuelet.in)
+                // cuelets = orch.cuelets
+            }
+        })
     })
 
     let modus = $state([])

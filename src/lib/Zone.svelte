@@ -47,6 +47,7 @@
     let fileinfo = $state()
     // the selection
     let selections = $state([])
+    let selection_PK = 0
     // size in seconds to encode at a time (a dublet)
     //  which sel.in|out are always a multiple of
     let chunk_length = 2
@@ -69,7 +70,7 @@
     })
     function init_sel() {
         selections = [
-            {id:0}
+            {id:selection_PK++}
         ]
         // allow /$sel to be added to in Selection.svelte
         // < better than this - seems a messy hack - but worked for needles/Pointer
@@ -297,6 +298,7 @@
             needs.push(needs.shift())
         }
     }
+    
     // also, cuelet player can reject bad records:
     //  for some reason some of these objectURLs return blobs only 800 long
     let needle_complaints = 0

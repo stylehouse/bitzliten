@@ -23,87 +23,19 @@ class SyncableCueleter {
             }
             else {
                 // create it
-                cuelet = {in:playlet.in,out:playlet.out}
+                cuelet = new Cuelet({
+                    orch:this,
+                    in:playlet.in,out:playlet.out
+                })
                 this.cuelets.push(cuelet)
             }
-            this.sync_cuelet(cuelet,playlet)
+            cuelet.sync_cuelet(playlet)
         })
         tr.done()
         // and put them in the right order
         this.cuelets = this.cuelets.sort((a,b) => a.in - b.in)
     }
-    // it may have just been created
-    sync_cuelet(cuelet:acuelet,playlet:adublet) {
-        // link to origin
-        cuelet.playlet = playlet
-        // find playable
-        let dublet = playlet.ideal_dub || playlet.vague_dub
-        cuelet.objectURL = dublet?.objectURL
-        // < doing this already (we ) stops the first player playing. wtf
-        // else if (playlet.objectURL) {
-        //     cuelet.objectURL = playlet.objectURL
-        // }
-        // intime|outtime start from 0
-        this.localise_time(cuelet)
-        this.decodeAudio(cuelet)
-    }
-    decode_error(cuelet:acuelet) {
-        let nu = this.needle_uplink
-        nu && nu.bad_playlet && nu.bad_playlet(cuelet.playlet)
-    }
-    // map the in|out points (datum from start of the track)
-    //  to time, which starts at 0
-    localise_time(cuelet:acuelet) {
-        if (this.sel.in == null) throw "!sel.in"
-        cuelet.intime = cuelet.in - this.sel.in;
-        cuelet.outtime = cuelet.out - this.sel.in;
-    }
-    // convert objectURL to buffer
-    // we can start playing cuelets before they all have
-    async decodeAudio(cuelet:acuelet) {
-        if (!cuelet.objectURL) return
 
-        if (untrack(() => cuelet.buffer)) return
-
-        let buf = await ffetch(cuelet.objectURL)
-        // our ffetch() returns a Uint8Array!
-        let res = new Response(buf)
-        let blob = await res.arrayBuffer()
-        // some kind of bad data happens when <1k
-        // < find out what exactly. seeking off the end of the source?
-        if (blob.byteLength < 1000) {
-            console.warn("Bad dub")
-            this.decode_error(cuelet)
-            let decode_error
-            try {
-                cuelet.buffer = await this.audioContext.decodeAudioData(blob)
-            }
-            catch(er) {
-                decode_error = er
-            }
-            // always happens when buffer <1k
-            if (!decode_error) debugger
-            if (!decode_error.message.includes('Unable to decode audio data')) debugger
-            console.error("cuelet <1k: ",{cuelet,buf,res,blob,decode_error})
-            // we will fail to play until re-dubbed
-            return
-        }
-        // < flipping the order of these next two lines always makes .blob_size=0 wtf
-        cuelet.blob_size = blob.byteLength
-        cuelet.buffer = await this.audioContext.decodeAudioData(blob)
-
-        this.get_moodbar(cuelet)
-    }
-
-    async get_moodbar(cuelet:acuelet) {
-        let buf = await ffetch(cuelet.objectURL)
-        let res = new Response(buf)
-        let abuf = await res.arrayBuffer()
-        let webpdata = await get_moodbar_webpdata_from_opusdata(abuf)
-        if (webpdata) {
-            cuelet.moodbar = webpdata
-        }
-    }
 
     // handles wraparound
     next_cuelet(cuelet) {
@@ -116,6 +48,98 @@ class SyncableCueleter {
         return one
     }
 }
+class Cuelet {
+    public orch:Cueleter
+    public in
+    public out
+    constructor(opt) {
+        this.orch = opt.orch
+        this.in = opt.in
+        this.out = opt.out
+    }
+
+    // it may have just been created
+    sync_cuelet(playlet:adublet) {
+        // link to origin
+        this.playlet = playlet
+        // find playable
+        let dublet = playlet.ideal_dub || playlet.vague_dub
+        this.objectURL = dublet?.objectURL
+        // < this is now ancient:
+        //  < doing this already (we ) stops the first player playing. wtf
+        // else if (playlet.objectURL) {
+        //     this.objectURL = playlet.objectURL
+        // }
+        // intime|outtime start from 0
+        this.localise_time()
+        console.log("Cueletsync:"+this.in)
+        if (!this.objectURL) return
+        this.decodeAudio()
+        this.get_moodbar()
+    }
+    // map the in|out points (datum from start of the track)
+    //  to time, which starts at 0
+    localise_time() {
+        let sel = this.orch.sel
+        if (sel.in == null) throw "!sel.in"
+        this.intime = this.in - sel.in;
+        this.outtime = this.out - sel.in;
+    }
+    // convert objectURL to buffer
+    // we can start playing cuelets before they all have
+    async decodeAudio() {
+
+        if (untrack(() => this.buffer)) return
+
+        let buf = await ffetch(this.objectURL)
+        // our ffetch() returns a Uint8Array!
+        let res = new Response(buf)
+        let blob = await res.arrayBuffer()
+        // some kind of bad data happens when <1k
+        // < find out what exactly. seeking off the end of the source?
+        if (blob.byteLength < 1000) {
+            console.warn("Bad dub")
+            this.decode_error()
+            let decode_error
+            try {
+                cuelet.buffer = await this.orch.audioContext.decodeAudioData(blob)
+            }
+            catch(er) {
+                decode_error = er
+            }
+            // always happens when buffer <1k
+            if (!decode_error) debugger
+            if (!decode_error.message.includes('Unable to decode audio data')) debugger
+            console.error("cuelet <1k: ",{cuelet:this,buf,res,blob,decode_error})
+            // we will fail to play until re-dubbed
+            return
+        }
+        // < flipping the order of these next two lines always makes .blob_size=0 wtf
+        this.blob_size = blob.byteLength
+        this.buffer = await this.orch.audioContext.decodeAudioData(blob)
+
+        return true
+    }
+    decode_error() {
+        let nu = this.orch.needle_uplink
+        nu && nu.bad_playlet
+            && nu.bad_playlet(this.playlet)
+    }
+
+    async get_moodbar() {
+        if (this.moodbar) return console.log("non moodbar:"+this.in)
+        console.log("moodbar:"+this.in)
+        let buf = await ffetch(this.objectURL)
+        let res = new Response(buf)
+        let abuf = await res.arrayBuffer()
+        let webpdata = await get_moodbar_webpdata_from_opusdata(abuf)
+        if (webpdata) {
+            this.moodbar = webpdata
+            this.ping && this.ping()
+        }
+    }
+}
+// makes pictures of sound. glowy intensities, different colours somehow.
 async function get_moodbar_webpdata_from_opusdata(arrayBuffer) {
     const formData = new FormData();
     const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
@@ -134,6 +158,10 @@ async function get_moodbar_webpdata_from_opusdata(arrayBuffer) {
     const imageBlob = await response.blob();
     return URL.createObjectURL(imageBlob);
 }
+
+
+
+
 class SpasmableCueleter extends SyncableCueleter {
     public spasm_control!:null|object
     get time() {
