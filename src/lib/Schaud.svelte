@@ -2,7 +2,7 @@
     import { tweened } from 'svelte/motion';
 	import { fade,scale } from 'svelte/transition';
     import { dec } from "./FFgemp"
-    import { Cueleter, ModusCueletSeq } from "./cuelets"
+    import { Cueleter, ModusCueletSeq } from "./cuelets.svelte"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
     import Pointer from './Pointer.svelte';
     import { onDestroy, untrack } from 'svelte';

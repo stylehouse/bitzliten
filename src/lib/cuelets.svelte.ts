@@ -52,6 +52,9 @@ class Cuelet {
     public orch:Cueleter
     public in
     public out
+
+    buffer = $state()
+    moodbar = $state()
     constructor(opt) {
         this.orch = opt.orch
         this.in = opt.in
