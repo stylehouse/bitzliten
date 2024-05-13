@@ -10,17 +10,62 @@
 	//    a sale is more stable than a value, right?
 	// < feeding a function to show the pending value
 	//    as a colour space explorer, make bluenoise|phi pointilism glow
-	export let value = 5;
-	export let min = 1;
-	export let max = 10;
-	// how finely you notch the range
-	//  step=0.001 is too small to adjust with movement in pixels
-	export let step = 1;
-	//  300px seems good can be done in either direction by a relaxed hand
-	export let space = 300;
-	export let size = "3.4rem";
-	// value via callback
-	export let commit;
+	let {
+		value=$bindable(5),
+
+		// < callbacks|bindables to feed values while twiddling
+		//    commit to value itself on release
+			feed,
+			// < debounce 50ms?
+			slow,
+			// idiomatic?
+			valued=$bindable(),
+
+		// any or none for range=20
+		min,
+		max,
+		range,
+		default_range=20,
+
+		// how finely you notch the range
+		//  step=0.001 is too small to adjust with movement in pixels
+		step = 1,
+
+		//  300px seems good can be done in either direction by a relaxed hand
+		space = 300,
+
+		// < scale everything up?
+		size = "3.4rem",
+
+		// value via callback
+		//  after release indicates greater commitment to value
+		commit,
+		// or a similar scheme (grab before move)
+		ongrab,
+		onrelease,
+        // or just the bool for being in that state:
+        grabbed=$bindable(),
+
+
+	} = $props()
+	// < if above we say: grabbed=$bindable(false),
+	//    Svelte complains:
+	// 	   Cannot do `bind:grabbed={undefined}` when 
+	//		`grabbed` has a fallback value
+	//   because of the imposition of the undefined fed in
+	//	  by eg KnobTime: let grabbed = $state()
+	//	  ie they "give" grabbed to, though it is just for receiving from, Knob
+	grabbed = false
+	function be_grabbed() {
+		ongrab && ongrab(value)
+		grabbed = true
+	}
+	function be_released() {
+		onrelease && onrelease(value)
+		commit && commit(value)
+		grabbed = false
+	}
+
 
 	let elem: Element;
 	let elemVal: Element;
@@ -46,7 +91,7 @@
 		// just clicking on the value takes you to typing in a new one
 		if (!moved) elemVal.select()
 		// release indicates greater commitment to value
-		commit && commit(value)
+		be_released()
 	}
 	let locksanity = () => document.pointerLockElement != elem && unlock()
 	let lock = (ev) => {
@@ -58,6 +103,7 @@
 
 		moved = false
 		started = {clientX:ev.clientX,clientY:ev.clientY}
+		be_grabbed()
 		outpute = false
 
 		// console.log("Start pointer at ",started)
@@ -72,8 +118,7 @@
 	};
 	onDestroy(unlock);
 
-	// fit our range onto a standard drag-distance space
-	let range = max - min;
+	initialise_min_max_range()
 	let scaleFactor = space / range;
 	function scaleMovement(distance: number) {
 		return (distance /= scaleFactor);
@@ -125,7 +170,7 @@
 	let clamp = (a,b,c) => {
 		return Math.min(Math.max(a, b), c);
 	}
-	let dec = (s,precision) => {
+	function dec(s,precision) {
         if (null == precision) precision = 4
         let mul = '1e'+precision
         return (s * mul).toFixed() / mul
@@ -137,9 +182,31 @@
 		value = v
 	}
 
+	function initialise_min_max_range() {
+		// fit our range onto a standard drag-distance space
+		if (value == null) throw "!value"
+		function minmax_from_range(range) {
+		}
+		if (min == null && max == null) {
+			if (range == null) {
+				range = default_range
+			}
+			min = dec(value - range/2)
+			max = dec(value + range/2)
+		}
+		else {
+			range = max - min
+		}
+		if (isNaN(range)) throw "NaN"
+		if (isNaN(min)) throw "NaN"
+		if (isNaN(max)) throw "NaN"
+	}
+
 	// the min and max values cause the knob to lean either way
-	let lean
-	$: lean = value == min ? +5 : value == max ? -5 : 0
+	let lean = $state()
+	$effect(() => {
+		lean = value == min ? +5 : value == max ? -5 : 0
+	})
 	
 	let width = "1.2em"
 	let height = "1.2em"

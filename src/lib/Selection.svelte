@@ -1,6 +1,6 @@
 <script lang=ts>
     import Schaud from "./Schaud.svelte";
-    import Knob from './ui/Knob.svelte';
+    import KnobTime from "./ui/KnobTime.svelte";
 
     let {sel,needle_uplink,on_reselection,chunk_length,duration} = $props()
 
@@ -117,14 +117,6 @@
             
         }
     })
-    const obj = {
-    log: ["example", "test"],
-    get latest() {
-        if (this.log.length === 0) return undefined;
-        return this.log[this.log.length - 1];
-    },
-    };
-    console.log("Shacu ",obj)
 
 
 
@@ -145,22 +137,22 @@
             {#snippet leftend(width_per_s)}
                 <span>
                     in
-                    <Knob min={sel.in-10} max={sel.in+10} 
+                    <KnobTime min={sel.in-10} max={sel.in+10} 
                         bind:value={selin}
-                        {commit} ></Knob>
+                        {commit} />
                     move
-                    <Knob min={-30} max={+30} 
+                    <KnobTime min={-30} max={+30} 
                         bind:value={selmo}
-                        {commit} ></Knob>
+                        {commit} />
                     @ {precise}
                 </span>
             {/snippet}
             {#snippet rightend(width_per_s)}
                 <span>
                     out
-                    <Knob min={sel.out-10} max={sel.out+10} 
+                    <KnobTime min={sel.out-10} max={sel.out+10} 
                     bind:value={selout}
-                    {commit} ></Knob>
+                    {commit} />
                 </span>
             {/snippet}
         </Schaud>
@@ -169,3 +161,9 @@
         <p>...</p>
     {/if}
 </div>
+
+<style>
+    div span {
+        position:relative;
+    }
+</style>
