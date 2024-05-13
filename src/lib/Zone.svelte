@@ -370,7 +370,7 @@
                 {/if}
                 </mode>
             {/each}
-            <button on:click={letsgo}>AGAIN</button>
+            <button onclick={letsgo}>AGAIN</button>
             {#if pending}<mode>PENDING</mode>{/if}
         {/if}
     </div>

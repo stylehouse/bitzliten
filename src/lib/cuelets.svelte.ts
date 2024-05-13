@@ -75,7 +75,6 @@ class Cuelet {
         // }
         // intime|outtime start from 0
         this.localise_time()
-        console.log("Cueletsync:"+this.in)
         if (!this.objectURL) return
         this.decodeAudio()
         this.get_moodbar()
@@ -91,8 +90,7 @@ class Cuelet {
     // convert objectURL to buffer
     // we can start playing cuelets before they all have
     async decodeAudio() {
-
-        if (untrack(() => this.buffer)) return
+        if (this.buffer) return
 
         let buf = await ffetch(this.objectURL)
         // our ffetch() returns a Uint8Array!
@@ -130,16 +128,13 @@ class Cuelet {
     }
 
     async get_moodbar() {
-        if (this.moodbar) return console.log("non moodbar:"+this.in)
-        console.log("moodbar:"+this.in)
+        if (this.moodbar) return
         let buf = await ffetch(this.objectURL)
         let res = new Response(buf)
         let abuf = await res.arrayBuffer()
         let webpdata = await get_moodbar_webpdata_from_opusdata(abuf)
-        if (webpdata) {
-            this.moodbar = webpdata
-            this.ping && this.ping()
-        }
+        if (!webpdata) throw "!webpdata"
+        this.moodbar = webpdata
     }
 }
 // makes pictures of sound. glowy intensities, different colours somehow.

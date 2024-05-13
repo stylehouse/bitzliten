@@ -139,7 +139,7 @@
 
 </script>
 
-<p> selection:{sel.id}
+<div> Selection:{sel.id}
     {#if playlets.length}
         <Schaud {playlets} {needle_uplink} {sel} {on_reselection}>
             {#snippet leftend(width_per_s)}
@@ -168,4 +168,4 @@
     {:else}
         <p>...</p>
     {/if}
- </p>
+</div>
