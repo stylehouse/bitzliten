@@ -97,38 +97,6 @@
             }
         }
     }
-
-
-    // < GOING from here on..?
-    let precise = $state('')
-    let wert = {}
-    let unwert = (s,k) => {
-        let was = wert[k]
-        wert[k] = s[k]
-        return s[k] != was
-    }
-    $effect(() => {
-        let check_startend_within_inout = false
-        if (unwert(sel.in) && sel.in != selin) {
-            console.log(`Schaud <- sel.in: ${selin} <- ${sel.in}`)
-        }
-        if (unwert(sel.out) && sel.out != selout) {
-            console.log(`Schaud <- sel.out: ${selout} <- ${sel.out}`)
-            
-        }
-    })
-
-
-
-
-
-    let magic = $state('')
-
-    magic = "also"
-    setTimeout(() => {
-    magic = "dingbat"
-    },1500)
-
 </script>
 
 <div> Selection:{sel.id}
@@ -144,7 +112,6 @@
                     <KnobTime min={-30} max={+30} 
                         bind:value={selmo}
                         {commit} />
-                    @ {precise}
                 </span>
             {/snippet}
             {#snippet rightend(width_per_s)}
@@ -156,7 +123,6 @@
                 </span>
             {/snippet}
         </Schaud>
-        <p>BTW: {magic}</p>
     {:else}
         <p>...</p>
     {/if}

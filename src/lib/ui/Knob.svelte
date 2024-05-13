@@ -30,6 +30,8 @@
 		// how finely you notch the range
 		//  step=0.001 is too small to adjust with movement in pixels
 		step = 1,
+		// if eg KnobTime wants to input "1:04" -> 64
+		interpret_type,
 
 		//  300px seems good can be done in either direction by a relaxed hand
 		space = 300,
@@ -56,6 +58,7 @@
 	//	  by eg KnobTime: let grabbed = $state()
 	//	  ie they "give" grabbed to, though it is just for receiving from, Knob
 	grabbed = false
+	// < include 
 	function be_grabbed() {
 		ongrab && ongrab(value)
 		grabbed = true
@@ -178,15 +181,17 @@
 	// also, we can type stuff in
 	let onInputChange = (ev) => {
 		let v = ev.currentTarget.value
+		if (interpret_type) {
+			v = interpret_type(v)
+			if (isNaN(v)) throw "NaN"
+		}
 		if (v*1 != v) return console.error("Ungood knob input", v)
-		value = v
+		value = dec(v)
 	}
 
 	function initialise_min_max_range() {
 		// fit our range onto a standard drag-distance space
 		if (value == null) throw "!value"
-		function minmax_from_range(range) {
-		}
 		if (min == null && max == null) {
 			if (range == null) {
 				range = default_range
