@@ -23,14 +23,19 @@
         return v*1
     }
 
-    // it comes to us
-    let knobval = $state(value)
-    $effect(() => {
-        value = knobval
-    })
-    $effect(() => {
-        knobval = value
-    })
+    // < buffer value?
+    // // it comes to us
+    // let knobval = $state(value)
+    // $effect(() => {
+    //     value = knobval
+    // })
+    // $effect(() => {
+    //     knobval = value
+    // })
+
+    function Ydip() {
+
+    }
 
     let grabbed = $state()
 </script>
@@ -41,8 +46,10 @@
 <span style="margin:1em">{value}</span>
 
 <Knob 
-    bind:value={knobval}
+    bind:value={value}
     {step}
+
+    axis="X"
 
     bind:grabbed={grabbed}
     {interpret_type}

@@ -32,6 +32,7 @@
 		step = 1,
 		// if eg KnobTime wants to input "1:04" -> 64
 		interpret_type,
+		axis = "Y",
 
 		//  300px seems good can be done in either direction by a relaxed hand
 		space = 300,
@@ -137,16 +138,16 @@
 		return dec(v,8);
 	}
 	function knobMove(event: PointerEvent): void {
-		let { movementY } = event;
-		if (movementY) {
+		let movement = get_movement(event)
+		if (movement) {
 			moved = true;
 			if (rawValue == null) rawValue = value;
 			if (outpute == false && scaleFactor >= 42) {
 				// to the first step (either way) a bit easier
-				movementY *= 1.618
+				movement *= 1.618
 			}
 			// accumulate this change
-			rawValue = clamp(min, rawValue - scaleMovement(movementY), max);
+			rawValue = clamp(min, rawValue + scaleMovement(movement), max);
 			// output a multiple of step near that
 			let newValue = roundToStep(rawValue)
 			if (newValue != value) {
@@ -155,6 +156,14 @@
 			}
 		}
 		locksanity()
+	}
+	function get_movement(event:PointerEvent) {
+		let key = "movement"+axis
+		if (event[key] == null) throw "no such axis: "+axis
+		let movement = event[key]
+		// towards the top of the screen decreases Y
+		if (axis == "Y") movement *= 1
+		return movement
 	}
 	// < this doesn't seem to work around this bug: https://bugs.kde.org/show_bug.cgi?id=478462
 	let move_pointer_to_where_it_started = async () => {
