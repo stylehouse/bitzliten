@@ -1,10 +1,10 @@
 <script lang="ts">
     import { tweened } from 'svelte/motion';
 	import { fade,scale } from 'svelte/transition';
-    import { dec } from "./FFgemp"
+    import { dec } from "./ff/FFgemp"
     import { Cueleter, ModusCueletSeq } from "./cuelets.svelte"
-    import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
-    import Pointer from './Pointer.svelte';
+    import type { quadjustable, amode, amodes, adublet,acuelet } from "./ff/FFgemp"
+    import Pointer from './ui/Pointer.svelte';
     import { onDestroy, untrack } from 'svelte';
 
     let {

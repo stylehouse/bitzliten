@@ -7,7 +7,7 @@
             throw er
         }
     }
-    import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
+    import type { quadjustable, amode, amodes, adublet,acuelet } from "./ff/FFgemp"
 
     // is uglier than Schaud.svelte
 

@@ -1,7 +1,7 @@
 <script lang="ts" module>
-    import { FFgemp,now,dec } from "./FFgemp"
-    import type { quadjustable, amode, amodes, adublet } from "./FFgemp"
-    import Knob from "./Knob.svelte";
+    import { FFgemp,now,dec } from "./ff/FFgemp"
+    import type { quadjustable, amode, amodes, adublet } from "./ff/FFgemp"
+    import Knob from "./ui/Knob.svelte";
     // with <audio> is awkward. maybe somewhere?
     import Player from "./Player.svelte";
     // per selection

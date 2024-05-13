@@ -1,7 +1,7 @@
 
 import { untrack } from "svelte"
-import { fetch as ffetch,dec } from "./FFgemp"
-import type { quadjustable, amode, amodes, adublet,acuelet } from "./FFgemp"
+import { fetch as ffetch,dec } from "./ff/FFgemp"
+import type { quadjustable, amode, amodes, adublet,acuelet } from "./ff/FFgemp"
 
 // a [cuelet+] represents a sequence of chunks of the media we encoded
 class SyncableCueleter {

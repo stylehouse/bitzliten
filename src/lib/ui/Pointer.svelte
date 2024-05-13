@@ -1,6 +1,6 @@
 <script lang="ts">
     import { tweened } from 'svelte/motion';
-    import { dec } from './FFgemp';
+    import { dec } from '../ff/FFgemp';
 
     // a needle
     let {ne = $bindable()} = $props();

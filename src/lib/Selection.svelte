@@ -1,6 +1,6 @@
 <script lang=ts>
     import Schaud from "./Schaud.svelte";
-    import Knob from './Knob.svelte';
+    import Knob from './ui/Knob.svelte';
 
     let {sel,needle_uplink,on_reselection,chunk_length,duration} = $props()
 
