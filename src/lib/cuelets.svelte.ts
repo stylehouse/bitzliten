@@ -90,7 +90,7 @@ class Cuelet {
     // convert objectURL to buffer
     // we can start playing cuelets before they all have
     async decodeAudio() {
-        if (this.buffer) return
+        if (untrack(() => this.buffer)) return
 
         let buf = await ffetch(this.objectURL)
         // our ffetch() returns a Uint8Array!
@@ -128,7 +128,7 @@ class Cuelet {
     }
 
     async get_moodbar() {
-        if (this.moodbar) return
+        if (untrack(() => this.moodbar)) return
         let buf = await ffetch(this.objectURL)
         let res = new Response(buf)
         let abuf = await res.arrayBuffer()
