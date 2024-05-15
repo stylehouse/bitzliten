@@ -200,8 +200,19 @@
         }
         return msg.join(" - ")
     }
-    // < pixels width per second
+    // pixels of width per second
+    // < scalable?
     let width_per_s = 100
+    // where the ends of the cuelets are
+    //  for positioning things in time from there
+    let ends = $state([])
+    $effect(() => {
+        let cuein = cuelets[0]
+        let cueout = cuelets.slice(-1)[0]
+        if (!cuein || !cueout) throw "!cue ends"
+        ends[0] = cuein.in
+        ends[1] = cueout.out
+    })
 </script>
 
 <div>*audio* {upto}:
@@ -212,7 +223,7 @@
     <span>
         <span>
             <button onclick={thump_machinery}>thump</button>
-            {@render leftend(width_per_s)}
+            {@render leftend(ends[0],width_per_s)}
         </span>
 {#key ready}
         {#each cuelets as cuelet (cuelet.in)}
@@ -233,7 +244,7 @@
         {/each}
 {/key}
         <span>
-            {@render rightend(width_per_s)}
+            {@render rightend(ends[1],width_per_s)}
         </span>
         
     <!-- 

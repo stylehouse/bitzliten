@@ -40,10 +40,6 @@
     let grabbed = $state()
 </script>
 
-{#if grabbed}
-    <span>GRABBED</span>
-{/if}
-<span style="margin:1em">{value}</span>
 
 <Knob 
     bind:value={value}

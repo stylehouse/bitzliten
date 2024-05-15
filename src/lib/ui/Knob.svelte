@@ -39,6 +39,7 @@
 
 		// < scale everything up?
 		size = "3.4rem",
+		label,
 
 		// value via callback
 		//  after release indicates greater commitment to value
@@ -227,25 +228,27 @@
 </script>
 
 <zf bind:this={elem} on:pointerdown|stopPropagation={lock} on:pointerup={release}>
+	{@render label()}
 	<span id="knobaura">
 		<span id="knobblob">
 			<svg {width} {height}>
 				<circle class="knobBg" cx="5" cy="{10 + lean}" r="10"/>
 			</svg>
 		</span>
+		<input
+			type="text"
+			bind:this={elemVal}
+			on:change={onInputChange}
+			value={value}
+			/>
 	</span>
-	<input
-		type="text"
-		bind:this={elemVal}
-		on:change={onInputChange}
-		value={value}
-		/>
 	<!-- <span bind:this={elemVal} contenteditable="true">{value}</span> -->
 </zf>
 
 <style>
 	#knobaura {
     	position: relative;
+		display: inline-block;
 	}
 	#knobblob {
 		position: absolute;
@@ -274,7 +277,6 @@
 		display: inline-block;
 		min-width: 1.2em;
 		min-height: 1.2em;
-		border-left: 1px solid black;
 		overflow: hidden;
         border-radius: 0.5em;
 		vertical-align: middle;

@@ -8,11 +8,18 @@
     $effect(() => {
         playlets = sel.playlets || []
     })
+    // of the whole File
+    type tracktime = number
+    // and the selection as a separate expanse, starting from 0
+    // of between first cuelet.in and last cuelet.out
+    //  aka intime etc see class Cuelet / localise_time():
+    //   this.intime = this.in - sel.in
+    type looptime = number
 
     // accept adjustments, may quickly adjust play
     //  set into an object owned by Zone...
-    let in_time = $state(30)
-    let out_time = $state(36)
+    let in_time:tracktime = $state(30)
+    let out_time:tracktime = $state(36)
     sel.set({
         in_time,
         out_time,
@@ -72,7 +79,7 @@
         selmo_was = 0
     }
 
-    let min_loop_duration = 4
+    let min_loop_duration:looptime = 4
     function range_sanity() {
         // in before start
         if (selin < 0) {
@@ -97,29 +104,53 @@
             }
         }
     }
+    function locator_grit(fromtime,totime,width_per_s) {
+        let delta = fromtime - totime
+        return delta * width_per_s
+    }
+    
 </script>
 
 <div> Selection:{sel.id}
     {#if playlets.length}
         <Schaud {playlets} {needle_uplink} {sel} {on_reselection}>
-            {#snippet leftend(width_per_s)}
+            {#snippet leftend(cueletsin:tracktime, width_per_s)}
                 <span>
-                    in
-                    <KnobTime min={sel.in-10} max={sel.in+10} 
-                        bind:value={selin}
-                        {commit} />
-                    move
-                    <KnobTime min={-30} max={+30} 
-                        bind:value={selmo}
-                        {commit} />
+                    <dof style="margin-top:15em;">
+                        <KnobTime range=60
+                            bind:value={selmo}
+                            {commit} >
+                            {#snippet label()}
+                                move
+                            {/snippet}
+                        </KnobTime>
+                    </dof>
+                </span>
+                <span>
+                    <grit class="openbracket"
+                        style="left:{-locator_grit(cueletsin,selin,width_per_s)}px">
+                        <KnobTime
+                            bind:value={selin}
+                            {commit} >
+                            {#snippet label()}
+                                in
+                            {/snippet}
+                        </KnobTime>
+                    </grit>
                 </span>
             {/snippet}
-            {#snippet rightend(width_per_s)}
+            {#snippet rightend(cueletsout:tracktime, width_per_s)}
                 <span>
-                    out
-                    <KnobTime min={sel.out-10} max={sel.out+10} 
-                    bind:value={selout}
-                    {commit} />
+                    <grit class="closebracket"
+                        style="right:{locator_grit(cueletsout,selout,width_per_s)}px">
+                        <KnobTime
+                            bind:value={selout}
+                            {commit} >
+                            {#snippet label()}
+                                out
+                            {/snippet}
+                        </KnobTime>
+                    </grit>
                 </span>
             {/snippet}
         </Schaud>
@@ -131,5 +162,18 @@
 <style>
     div span {
         position:relative;
+    }
+    grit {
+        position:absolute;
+        z-index:1;
+        padding-left:-0.5em;
+    }
+    .openbracket {
+        border-radius:1em;
+        border-left:3px solid lavender;
+    }
+    .closebracket {
+        border-radius:1em;
+        border-right:3px solid lavender;
     }
 </style>
