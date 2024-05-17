@@ -21,11 +21,16 @@
 			// idiomatic?
 			valued=$bindable(),
 
-		// any or none for range=20
+		// drag distance of range
+		//  300px seems good, can be done in either direction by a relaxed hand
+		space = 300,
+		// how much value changes over the given space
+		range = 20,
+		// optional limits to value
+		// doesn't imply range (as was deprecated)
+		//  eg, if these were range*2 apart, you'd drag by space*2 to go between
 		min,
 		max,
-		range,
-		default_range=20,
 
 		// how finely you notch the range
 		//  step=0.001 is too small to adjust with movement in pixels
@@ -34,8 +39,6 @@
 		interpret_type,
 		axis = "Y",
 
-		//  300px seems good can be done in either direction by a relaxed hand
-		space = 300,
 
 		// < scale everything up?
 		size = "3.4rem",
@@ -52,6 +55,9 @@
 
 
 	} = $props()
+
+
+
 	// < if above we say: grabbed=$bindable(false),
 	//    Svelte complains:
 	// 	   Cannot do `bind:grabbed={undefined}` when 
@@ -69,7 +75,11 @@
 		onrelease && onrelease(value)
 		commit && commit(value)
 		grabbed = false
+		if (min_max_are_from_range_value) {
+			update_min_max_from_range_value()
+		}
 	}
+
 
 
 	let elem: Element;
@@ -123,7 +133,6 @@
 	};
 	onDestroy(unlock);
 
-	initialise_min_max_range()
 	let scaleFactor = space / range;
 	function scaleMovement(distance: number) {
 		return (distance /= scaleFactor);
@@ -144,11 +153,13 @@
 			moved = true;
 			if (rawValue == null) rawValue = value;
 			if (outpute == false && scaleFactor >= 42) {
-				// to the first step (either way) a bit easier
+				// if big steps, to the first step (either way) a bit easier
 				movement *= 1.618
 			}
 			// accumulate this change
-			rawValue = clamp(min, rawValue + scaleMovement(movement), max);
+			rawValue = rawValue + scaleMovement(movement);
+			if (min != null) rawValue = Math.max(min,rawValue)
+			if (max != null) rawValue = Math.min(max,rawValue)
 			// output a multiple of step near that
 			let newValue = roundToStep(rawValue)
 			if (newValue != value) {
@@ -158,6 +169,7 @@
 		}
 		locksanity()
 	}
+
 	function get_movement(event:PointerEvent) {
 		let key = "movement"+axis
 		if (event[key] == null) throw "no such axis: "+axis
@@ -180,9 +192,6 @@
 		});
 		document.dispatchEvent(event)
 	}
-	let clamp = (a,b,c) => {
-		return Math.min(Math.max(a, b), c);
-	}
 	function dec(s,precision) {
         if (null == precision) precision = 4
         let mul = '1e'+precision
@@ -197,24 +206,6 @@
 		}
 		if (v*1 != v) return console.error("Ungood knob input", v)
 		value = dec(v)
-	}
-
-	function initialise_min_max_range() {
-		// fit our range onto a standard drag-distance space
-		if (value == null) throw "!value"
-		if (min == null && max == null) {
-			if (range == null) {
-				range = default_range
-			}
-			min = dec(value - range/2)
-			max = dec(value + range/2)
-		}
-		else {
-			range = max - min
-		}
-		if (isNaN(range)) throw "NaN"
-		if (isNaN(min)) throw "NaN"
-		if (isNaN(max)) throw "NaN"
 	}
 
 	// the min and max values cause the knob to lean either way

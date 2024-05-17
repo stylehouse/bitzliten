@@ -40,7 +40,6 @@
     let grabbed = $state()
 </script>
 
-
 <Knob 
     bind:value={value}
     {step}
@@ -52,9 +51,17 @@
     
     {...props} />
 
+{#if grabbed}
+    <aro>⇔</aro>
+{/if}
 <style>
     span {
         position:absolute;
         right:0px;
+    }
+    aro {
+        position:absolute;
+        display:block;
+        font-size:500%;
     }
 </style>
