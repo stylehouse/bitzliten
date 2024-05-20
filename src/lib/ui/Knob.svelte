@@ -75,9 +75,6 @@
 		onrelease && onrelease(value)
 		commit && commit(value)
 		grabbed = false
-		if (min_max_are_from_range_value) {
-			update_min_max_from_range_value()
-		}
 	}
 
 
@@ -110,6 +107,7 @@
 	}
 	let locksanity = () => document.pointerLockElement != elem && unlock()
 	let lock = (ev) => {
+		ev.stopPropagation()
 		elem.requestPointerLock();
 		// to not stick around after alt-tab (or other unknown interference)
 		let lockchange = () => locksanity()
@@ -218,7 +216,7 @@
 	let height = "1.2em"
 </script>
 
-<zf bind:this={elem} on:pointerdown|stopPropagation={lock} on:pointerup={release}>
+<zf bind:this={elem} onpointerdown={lock} onpointerup={release}>
 	{@render label()}
 	<span id="knobaura">
 		<span id="knobblob">
@@ -229,7 +227,7 @@
 		<input
 			type="text"
 			bind:this={elemVal}
-			on:change={onInputChange}
+			onchange={onInputChange}
 			value={value}
 			/>
 	</span>
