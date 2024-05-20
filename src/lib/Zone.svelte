@@ -7,10 +7,11 @@
     // per selection
     //  contains Schaud.svelte, using the audio api
     import Selection from "./Selection.svelte";
+    import { create_unfulfilled_dublets } from "./cuelet_precursor.svelte";
     // 2s chunks
     // lots of them together, buffering
     // < loop end adjustment
-    //  < with visual...
+    // with visual...
 
     let FF = new FFgemp()
     FF.console_log = false
@@ -115,15 +116,6 @@
     })
 
 
-    // sel -> modes
-    // called from letsgo(), so we have modes[]
-    function sel_to_modes(sel) {
-        // console.log("sel_to_modes()")
-        let seek = find_t_in_N(modes,'seek')
-        seek.s = sel.in
-        let length = find_t_in_N(modes,'length')
-        length.s = sel.out - sel.in
-    }
 
     // two paths of config change notification:
     // mutation inside ~modes (via Knob twiddles) or ~file -> processing
@@ -222,27 +214,36 @@
 
         nublet.modes = clone_modes()
         // convert in|out to:
-        let seek = find_t_in_N(nublet.modes,'seek')
-        seek.s = nublet.in
-        let length = find_t_in_N(nublet.modes,'length')
-        length.s = nublet.out - nublet.in
-        if (length.s <= 0) throw "!length"
+        set_modes_value(nublet.modes,'seek',nublet.in)
+        let length = nublet.out - nublet.in
+        if (length <= 0) throw "!length"
+        set_modes_value(nublet.modes,'length',length)
         
         // this now describes a unique dublet
         nublet.modes_json = JSON.stringify(nublet.modes)
+    }
+    // sel -> modes
+    // called from letsgo(), so we have modes[]
+    function sel_to_modes(sel) {
+        // set_modes_value(nublet.modes,'seek',nublet.in)
+        // let length = nublet.out - nublet.in
+        // if (length <= 0) throw "!length"
+        // set_modes_value(nublet.modes,'length',length)
+        
+        // console.log("sel_to_modes()")
+        let seek = find_t_in_N(modes,'seek')
+        seek.s = sel.in
+        let length = find_t_in_N(modes,'length')
+        length.s = sel.out - sel.in
+    }
+    function set_modes_value(modes,t,s) {
+        let mode = find_t_in_N(modes,t)
+        mode.s = s
     }
     function find_t_in_N(N,t) {
         let M = N.filter((m) => m.t == t)
         if (M.length > 1) throw "many t"
         return M[0]
-    }
-    function create_unfulfilled_dublets(sel,n_chunks,chunk_length:number) :adublet[] {
-        return Array(n_chunks).fill(1).map((v,k) => {
-            return {
-                in: sel.in + k*chunk_length,
-                out: sel.in + k*chunk_length + chunk_length,
-            }
-        })
     }
 
     let latest_cmd = $state('')
