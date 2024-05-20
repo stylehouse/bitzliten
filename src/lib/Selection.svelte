@@ -1,13 +1,10 @@
 <script lang=ts>
     import Schaud from "./Schaud.svelte";
     import KnobTime from "./ui/KnobTime.svelte";
+    import { Sele } from "./cuelet_precursor.svelte";
 
     let {sel,needle_uplink,on_reselection,chunk_length,duration} = $props()
 
-    let playlets = $state([])
-    $effect(() => {
-        playlets = sel.playlets || []
-    })
     // of the whole File
     type tracktime = number
     // and the selection as a separate expanse, starting from 0
@@ -18,12 +15,13 @@
 
     // accept adjustments, may quickly adjust play
     //  set into an object owned by Zone...
-    let in_time:tracktime = $state(30)
-    let out_time:tracktime = $state(36)
-    sel.set({
-        in_time,
-        out_time,
-    })
+    let in_time:tracktime = $state(sel.in != null ? sel.in : 30)
+    let out_time:tracktime = $state(sel.out != null ? sel.out : 36)
+    // < precise time should be somewhere, currently not needed?
+    // sel.set({
+    //     in_time,
+    //     out_time,
+    // })
     // shunt upwards when time needs expanding
     $effect(() => {
         // inclusively select dublet spaces
@@ -32,29 +30,23 @@
             out: Math.ceil(out_time / chunk_length) * chunk_length,
         }
         if (fel.in != sel.in || fel.out != sel.out) {
-            let first_ever = sel.in == null
             // non-reactively set it here
             sel.set(fel)
             console.log("Selection Woke",sel)
             // then cause a reaction
-            !first_ever && on_reselection()
+            // < only needed when adjusting sel.out, wtf?
+            on_reselection()
         }
         else {
-            console.log("Selection zzzz",sel)
+            // console.log("Selection zzzz",sel)
         }
     })
-
-    let selin = $state()
-    let selout = $state()
+    // pull to Knobs
+    let selin = $state(in_time)
+    let selout = $state(out_time)
     let selmo = $state(0)
     let selmo_was = 0
     let nomore = 0
-    // pull to Knobs
-    $effect(() => {
-        selin = in_time
-        selout = out_time
-        console.log(" <- inout_time")
-    })
     // push to sel
     $effect(() => {
         selmo && add_selmo()
@@ -62,7 +54,7 @@
 
         in_time = selin
         out_time = selout
-        console.log("inout_time <- ")
+        // console.log("inout_time <- ")
     })
     function add_selmo() {
         // difference from last tiny adjustment
@@ -108,12 +100,11 @@
         let delta = fromtime - totime
         return delta * width_per_s
     }
-    
 </script>
 
 <div> Selection:{sel.id}
-    {#if playlets.length}
-        <Schaud {playlets} {needle_uplink} {sel} {on_reselection}>
+    {#if sel.playlets.length}
+        <Schaud {needle_uplink} {sel} {on_reselection}>
             {#snippet leftend(cueletsin:tracktime, width_per_s)}
                 <span>
                     <dof style="margin-top:15em;">

@@ -8,7 +8,6 @@
     import { onDestroy, untrack } from 'svelte';
 
     let {
-        playlets,
         needle_uplink,
         sel,
         on_reselection,
@@ -30,10 +29,10 @@
 
     // playlets -> cuelets
     $effect(() => {
-        orch.sync_cuelets(playlets)
+        orch.sync_cuelets(sel.playlets)
     })
     $effect(() => {
-        orch.sync_cuelets(playlets)
+        orch.sync_cuelets(sel.playlets)
     })
 
     let modus = $state([])
@@ -179,7 +178,7 @@
     function cuelet_info(cuelet) {
         let msg = []
         // 
-        msg.push(cuelet.in)
+        msg.push(cuelet.in+'-'+cuelet.out)
         // .buffer is decoded audio, .source while playing it
         if (!cuelet.buffer) {
             msg.push("!buffer")
@@ -238,8 +237,8 @@
                         />
                     <moodbar class="liner mask"/>
                 {/if}
-                    
-                &nbsp; {cuelet_info(cuelet)}
+                
+                <span>&nbsp; {cuelet_info(cuelet)}</span>
             </soundbox>
         {/each}
 {/key}
@@ -293,6 +292,9 @@
         }
         soundbox.cuenow {
             background-color:lightblue;
+        }
+        soundbox span {
+            z-index:1;
         }
         .liner {
             width:100%;

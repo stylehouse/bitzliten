@@ -7,7 +7,7 @@
     // per selection
     //  contains Schaud.svelte, using the audio api
     import Selection from "./Selection.svelte";
-    import { create_unfulfilled_dublets } from "./cuelet_precursor.svelte";
+    import { Sele,create_unfulfilled_dublets } from "./cuelet_precursor.svelte";
     // 2s chunks
     // lots of them together, buffering
     // < loop end adjustment
@@ -71,7 +71,7 @@
     })
     function init_sel() {
         selections = [
-            {id:selection_PK++}
+            new Sele({id:selection_PK++})
         ]
         // allow /$sel to be added to in Selection.svelte
         // < better than this - seems a messy hack - but worked for needles/Pointer
@@ -120,7 +120,7 @@
     // two paths of config change notification:
     // mutation inside ~modes (via Knob twiddles) or ~file -> processing
     $effect(() => {
-        modes && file &&
+        selections && modes && file &&
         // letsgo()
             setTimeout(() => letsgo(),1)
     })
@@ -131,7 +131,8 @@
     }
     // Knobs elsewhere, eg Selection
     function on_reselection() {
-        letsgo()
+        console.log("on_reselection()")
+            setTimeout(() => letsgo(),1)
     }
 
     function letsgo() {
@@ -140,9 +141,6 @@
         // < support more than one?
         selections.map(sel => {
             if (sel.in == null) return
-            // copy this sel to modes
-            sel_to_modes(sel)
-
             // make view of what to play
             sel.playlets = make_playlets(sel)
             playlets.push(...sel.playlets)
@@ -156,13 +154,24 @@
     
     
     // generate a bunch of tiles for your ears to walk on
-    function make_playlets(sel) {
+    function make_playlets(sel):adublet[] {
+        // Sele decides how to encode (modes)
+        sel.modes ||= clone_modes()
+
         let {n_chunks} = get_timespace(sel)
         // a set of dublets stretching across it
         let nublets = create_unfulfilled_dublets(sel,n_chunks,chunk_length)
         // ready it for being an ffmpeg job
         //  ie include modes+modes_json, which includes its in|out points
-        nublets.map(nublet => compile_dublet_modes(nublet))
+        nublets.map(nublet => {
+            // copy how to do things
+            nublet.modes = clone_modes(sel.modes)
+            // narrow in|out to this nublet
+            sel_to_modes(nublet,nublet.modes)
+
+            // this now describes a unique dublet
+            nublet.modes_json = JSON.stringify(nublet.modes)
+        })
 
         // link to candidate dublets
         nublets.map(nublet => find_dub(nublet))
@@ -202,39 +211,22 @@
         let n_chunks = Math.ceil(length / chunk_length)
         return {length,n_chunks}
     }
-    function compile_dublet_modes(nublet) {
-        let clone_modes = () => {
-            // < why not?
-            // return modes.map(mode => Object.fromEntries(mode))
-            return modes.map(mode => {
-                let ha = {...mode}
-                return ha
-            })
-        }
-
-        nublet.modes = clone_modes()
-        // convert in|out to:
-        set_modes_value(nublet.modes,'seek',nublet.in)
-        let length = nublet.out - nublet.in
-        if (length <= 0) throw "!length"
-        set_modes_value(nublet.modes,'length',length)
-        
-        // this now describes a unique dublet
-        nublet.modes_json = JSON.stringify(nublet.modes)
+    function clone_modes(these) {
+        these ||= modes
+        // < why not?
+        // return modes.map(mode => Object.fromEntries(mode))
+        return these.map(mode => {
+            let ha = {...mode}
+            return ha
+        })
     }
     // sel -> modes
     // called from letsgo(), so we have modes[]
-    function sel_to_modes(sel) {
-        // set_modes_value(nublet.modes,'seek',nublet.in)
-        // let length = nublet.out - nublet.in
-        // if (length <= 0) throw "!length"
-        // set_modes_value(nublet.modes,'length',length)
-        
-        // console.log("sel_to_modes()")
-        let seek = find_t_in_N(modes,'seek')
-        seek.s = sel.in
-        let length = find_t_in_N(modes,'length')
-        length.s = sel.out - sel.in
+    function sel_to_modes(sel,modes) {
+        set_modes_value(modes,'seek',sel.in)
+        let length = sel.out - sel.in
+        if (length <= 0) throw "!length"
+        set_modes_value(modes,'length',length)
     }
     function set_modes_value(modes,t,s) {
         let mode = find_t_in_N(modes,t)
@@ -329,10 +321,15 @@
     function handleDragOver(e) {
         e.preventDefault();
     }
+    let reboot = $state(0)
+    function rebootup(e) {
+        reboot++
+    }
 </script>
 
 <main>
-    <p>{message}</p>
+    {#key reboot}
+    <p>{message} <button onclick={rebootup}>reboot</button></p>
     <div
         ondrop={handleDrop}
         ondragover={handleDragOver}
@@ -378,6 +375,7 @@
     {#if latest_cmd.length}
         <p>{latest_cmd}</p>
     {/if}
+    {/key}
 </main>
 <style>
     p {
