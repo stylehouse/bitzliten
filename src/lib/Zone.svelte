@@ -7,7 +7,8 @@
     // per selection
     //  contains Schaud.svelte, using the audio api
     import Selection from "./Selection.svelte";
-    import { Sele,create_unfulfilled_dublets } from "./cuelet_precursor.svelte";
+    import { Fili, Sele,create_unfulfilled_dublets } from "./cuelet_precursor.svelte";
+    import File from "./File.svelte";
     // 2s chunks
     // lots of them together, buffering
     // < loop end adjustment
@@ -22,8 +23,6 @@
     // < many more configs, mutextualisations.
     let modes:undefined|amodes = $state()
 
-    // the input
-    let file = $state()
     // $effect blocks are not async, see https://github.com/sveltejs/svelte/issues/9520#issuecomment-1817092724
     //  basically $.get() won't establish a dependency
     //   for anything async to the call to this $effect()
@@ -36,7 +35,8 @@
         modes = FF.modes
         if ('auto') {
             // file ||= 'aliomar.mp3'
-            file ||= 'loom - Dsharp Minor Triblaalistic 170 Experiment 6 10 20222.flac'
+            let path = 'loom - Dsharp Minor Triblaalistic 170 Experiment 6 10 20222.flac'
+            new_fil({path})
             // letsgo()
         }
     });
@@ -45,10 +45,31 @@
     // these reset per file:
 
     // info about the file
-    let fileinfo = $state()
+    let files = $state([])
+    let files_PK = 0
+    let new_fil = (c={}) => {
+        let fil = new Fili({id:files_PK++,...c})
+        files.push(fil)
+        return fil
+    }
     // the selection
     let selections = $state([])
     let selection_PK = 0
+    let new_sel = (c={}) => {
+        // usually are created once a c={fil} is ready (with .data)
+        let sel = new Sele({id:selection_PK++,...c})
+        selections.push(sel)
+        // allow /$sel to be added to in Selection.svelte
+        // < better than this - seems a messy hack - but worked for needles/Pointer
+        sel.set = (c) => {
+            Object.assign(sel,c)
+        }
+        return sel
+    }
+    // as Fili avail .data, they create an:
+    let fil_onload = (fil) => {
+        let sel = new_sel({fil})
+    }
     // size in seconds to encode at a time (a dublet)
     //  which sel.in|out are always a multiple of
     let chunk_length = 2
@@ -58,29 +79,6 @@
     //  decided in letsgo()
     let playlets:Array<adublet> = $state([])
     
-    // reset per file
-    let last_file
-    $effect(() => {
-        if (file && file != last_file) {
-            fileinfo = {}
-            init_sel()
-            dublets = []
-            playlets = []
-            last_file = file
-        }
-    })
-    function init_sel() {
-        selections = [
-            new Sele({id:selection_PK++})
-        ]
-        // allow /$sel to be added to in Selection.svelte
-        // < better than this - seems a messy hack - but worked for needles/Pointer
-        selections.map(sel => {
-            sel.set = (c) => {
-                Object.assign(sel,c)
-            }
-        })
-    }
     
 
     // MediaMetadata
@@ -88,39 +86,39 @@
     //   doesn't work for me - a speaker icon appears on the tab
     //    but the browser's two-notes music icon for media control doesn't include it
     //    this might be because of no https?
-    $effect(() => {
-        let meta = fileinfo?.meta
-        if (!meta) return
+    // $effect(() => {
+    //     let meta = fileinfo?.meta
+    //     if (!meta) return
 
-        console.log("Pushing  MediaMetadata",fileinfo)
+    //     console.log("Pushing  MediaMetadata",fileinfo)
 
-        // Create a MediaMetadata object
-        const mediaMetadata = new MediaMetadata({
-            title: meta.title??'',
-            artist: meta.artist??'',
-            album: meta.album??'',
-            // < look for a jpeg stream, transcode it out?
-            // artwork: [
-            // {
-            //     src: 'path/to/album-art.jpg',
-            //     sizes: '512x512',
-            //     type: 'image/jpeg',
-            // },
-            // ],
-        });
+    //     // Create a MediaMetadata object
+    //     const mediaMetadata = new MediaMetadata({
+    //         title: meta.title??'',
+    //         artist: meta.artist??'',
+    //         album: meta.album??'',
+    //         // < look for a jpeg stream, transcode it out?
+    //         // artwork: [
+    //         // {
+    //         //     src: 'path/to/album-art.jpg',
+    //         //     sizes: '512x512',
+    //         //     type: 'image/jpeg',
+    //         // },
+    //         // ],
+    //     });
         
-        // Set the mediaSession metadata
-        if ('mediaSession' in navigator) {
-            navigator.mediaSession.metadata = mediaMetadata;
-        }
-    })
+    //     // Set the mediaSession metadata
+    //     if ('mediaSession' in navigator) {
+    //         navigator.mediaSession.metadata = mediaMetadata;
+    //     }
+    // })
 
 
 
     // two paths of config change notification:
     // mutation inside ~modes (via Knob twiddles) or ~file -> processing
     $effect(() => {
-        selections && modes && file &&
+        selections && modes &&
         // letsgo()
             setTimeout(() => letsgo(),1)
     })
@@ -136,7 +134,7 @@
     }
 
     function letsgo() {
-        if (selections[0] == null) debugger
+        if (selections[0] == null) return
         playlets = []
         // < support more than one?
         selections.map(sel => {
@@ -239,12 +237,16 @@
     }
 
     let latest_cmd = $state('')
+    let fileinfo = {}
     let pending = false
     let last_job_time = null
     async function go_ffmpeg(joblet:adublet) {
         if (pending) return
         pending = true
 
+        // this Uint8Array gets consumed for some reason
+        // < sync files over there, which could be ffmpeg via REST
+        let file = joblet.sel.fil.data.slice()
         latest_cmd = joblet.modes_json
         let job_start_ts = now()
         let result = await FF.transcode(
@@ -330,6 +332,7 @@
 <main>
     {#key reboot}
     <p>{message} <button onclick={rebootup}>reboot</button></p>
+    <!-- svelte-ignore a11y_unknown_role -->
     <div
         ondrop={handleDrop}
         ondragover={handleDragOver}
@@ -338,8 +341,12 @@
         aria-dropeffect="execute"
         style="border: 2px dashed #ccc; padding: 20px; text-align: center;"
     >
+        {#each files as fil (fil.id)}
+            <File {fil} onload={() => fil_onload(fil)} />
+        {/each}
+
         {#if playlets.length}
-            loaded: {JSON.stringify(fileinfo)}
+            <!-- loaded: {JSON.stringify(fileinfo)} -->
         {:else}
             <p>
                 Drag and drop an audio file here
@@ -369,7 +376,6 @@
                 </mode>
             {/each}
             <button onclick={letsgo}>AGAIN</button>
-            {#if pending}<mode>PENDING</mode>{/if}
         {/if}
     </div>
     {#if latest_cmd.length}

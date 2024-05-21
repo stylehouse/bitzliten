@@ -31,9 +31,6 @@
     $effect(() => {
         orch.sync_cuelets(sel.playlets)
     })
-    $effect(() => {
-        orch.sync_cuelets(sel.playlets)
-    })
 
     let modus = $state([])
     // our default thing to do

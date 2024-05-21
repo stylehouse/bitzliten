@@ -149,7 +149,8 @@ export class FFgemp {
 
 
     async transcode(file: File,modes,fileinfo) {
-        const data = await fetchFile(file);
+        const data = file
+        // await fetchFile(file);
         const input = 'input.mp3';
         const ext = 'mkv';
         const output = 'output.' + ext;
