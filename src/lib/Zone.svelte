@@ -15,7 +15,7 @@
     // with visual...
 
     let FF = new FFgemp()
-    FF.console_log = false
+    FF.console_log = true
     let message = $state('');
     FF.on('message',(s:string) => message = s)
 
@@ -317,8 +317,15 @@
 
     function handleDrop(e) {
         e.preventDefault();
-        file = e.dataTransfer.files[0];
-        letsgo()
+        let given = e.dataTransfer.files
+        if (given.length > 1) {
+            throw "< sets of pictures"
+        }
+        selections = []
+        files = []
+        for (let file of given) {
+            new_fil({file})
+        }
     }
     function handleDragOver(e) {
         e.preventDefault();

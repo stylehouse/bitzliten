@@ -1,25 +1,38 @@
 
 import type { quadjustable, amode, amodes, adublet } from "./ff/FFgemp"
 import { fetch } from "./ff/FFgemp"
+type fil_type = 'audio'|'video'|'image'
 export class Fili {
     public id
+    // URL or file upload
     public path:string
+    public file:File
 
     public data = $state()
     public name = $state()
+    public type:fil_type
     constructor(opt) {
         Object.assign(this,opt)
     }
     async wake({onload}) {
         let fil = this
-        if (fil.path && !fil.data) {
-            let path = fil.path
-            fil.data = await fetch(fil.path);
+        if (!fil.data) {
+            // either a string URI path or File object
+
+            if (fil.path) {
+                fil.data = await fetch(fil.path);
+                // derive name from the end of path
+                fil.name = fil.path.split("/").pop()
+            }
+            if (fil.file) {
+                fil.data = await fetch(fil.file);
+                // it comes knowing these
+                if (!fil.file.type || !fil.file.name) debugger
+                fil.name = fil.file.name
+                fil.type = fil.file.type.split('/').shift()
+            }
             onload && onload()
         }
-        if (!fil.path) debugger
-        // derive name from the end of path
-        fil.name = fil.path.split("/").pop()
     }
 }
 export class Sele {
