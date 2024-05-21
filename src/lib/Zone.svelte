@@ -15,7 +15,7 @@
     // with visual...
 
     let FF = new FFgemp()
-    FF.console_log = true
+    FF.console_log = false
     let message = $state('');
     FF.on('message',(s:string) => message = s)
 
@@ -152,9 +152,12 @@
     
     
     // generate a bunch of tiles for your ears to walk on
-    function make_playlets(sel):adublet[] {
+    function make_playlets(sel:Sele):adublet[] {
         // Sele decides how to encode (modes)
         sel.modes ||= clone_modes()
+        // and attaches the Fili's identity
+        if (!sel.fil.dig) debugger
+        // set_modes_value(sel.modes,'input',sel.fil.dig)
 
         let {n_chunks} = get_timespace(sel)
         // a set of dublets stretching across it
@@ -168,9 +171,12 @@
             sel_to_modes(nublet,nublet.modes)
 
             // this now describes a unique dublet
-            nublet.modes_json = JSON.stringify(nublet.modes)
+            nublet.modes_json = sel.fil.name+" "
+                +sel.fil.dig+" "+JSON.stringify(nublet.modes)
         })
-
+        nublets.map(nublet => {
+            console.log(`nublet ${nublet.in}: ${sel.fil.name}`)
+        })
         // link to candidate dublets
         nublets.map(nublet => find_dub(nublet))
 
@@ -220,13 +226,15 @@
     }
     // sel -> modes
     // called from letsgo(), so we have modes[]
-    function sel_to_modes(sel,modes) {
+    type sel_basically = {in,out}
+    function sel_to_modes(sel:sel_basically,modes) {
         set_modes_value(modes,'seek',sel.in)
         let length = sel.out - sel.in
         if (length <= 0) throw "!length"
         set_modes_value(modes,'length',length)
     }
     function set_modes_value(modes,t,s) {
+        if (s == null) throw "huh"
         let mode = find_t_in_N(modes,t)
         mode.s = s
     }
@@ -321,8 +329,11 @@
         if (given.length > 1) {
             throw "< sets of pictures"
         }
+        // < multi-track sanity
         selections = []
         files = []
+        // < switching to a new track sanity
+        dublets = []
         for (let file of given) {
             new_fil({file})
         }

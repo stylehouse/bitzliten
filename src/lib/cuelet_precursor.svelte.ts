@@ -1,6 +1,6 @@
 
 import type { quadjustable, amode, amodes, adublet } from "./ff/FFgemp"
-import { fetch } from "./ff/FFgemp"
+import { fetch, getSHA256HashOfUint8Array } from "./ff/FFgemp"
 type fil_type = 'audio'|'video'|'image'
 export class Fili {
     public id
@@ -9,8 +9,10 @@ export class Fili {
     public file:File
 
     public data = $state()
-    public name = $state()
+    public dig:string = $state()
     public type:fil_type
+    public name = $state()
+
     constructor(opt) {
         Object.assign(this,opt)
     }
@@ -31,6 +33,7 @@ export class Fili {
                 fil.name = fil.file.name
                 fil.type = fil.file.type.split('/').shift()
             }
+            fil.dig = await getSHA256HashOfUint8Array(fil.data)
             onload && onload()
         }
     }

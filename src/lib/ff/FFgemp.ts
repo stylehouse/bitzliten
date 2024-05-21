@@ -12,6 +12,12 @@ export function dec(s,places=4) {
 export async function fetch(url) {
     return await fetchFile(url)
 }
+export async function getSHA256HashOfUint8Array(uint8Array) {
+    const hashBuffer = await crypto.subtle.digest('SHA-256', uint8Array);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  }
 // A small UI library to do:
 // - wasm init asap or when jobbed
 // - job config schema (what is adjustable) and scrapheap (culture)
@@ -47,6 +53,10 @@ export async function fetch(url) {
 function modes() {
     return [
         // these are m
+        {
+            t: "input", to: "i", s: '000',
+            cmd: (s) => [],
+        },
         {
             t: "seek", to: "ss", min: 1, max: 444, s: 30,
             cmd: (s) => ["-ss", s],
