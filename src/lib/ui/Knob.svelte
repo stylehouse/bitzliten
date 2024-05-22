@@ -173,7 +173,7 @@
 		if (event[key] == null) throw "no such axis: "+axis
 		let movement = event[key]
 		// towards the top of the screen decreases Y
-		if (axis == "Y") movement *= 1
+		if (axis == "Y") movement *= -1
 		return movement
 	}
 	// < this doesn't seem to work around this bug: https://bugs.kde.org/show_bug.cgi?id=478462
