@@ -42,8 +42,8 @@ export class Sele {
     public id
     public fil:Fili
 
-    public in = $state()
-    public out = $state()
+    public in
+    public out
     public playlets:adublet[] = $state([])
     public modes
     constructor(opt) {

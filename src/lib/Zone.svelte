@@ -153,11 +153,11 @@
     
     // generate a bunch of tiles for your ears to walk on
     function make_playlets(sel:Sele):adublet[] {
-        // Sele decides how to encode (modes)
-        sel.modes ||= clone_modes()
+        // how to encode (modes)
+        sel.modes = clone_modes()
         // and attaches the Fili's identity
         if (!sel.fil.dig) debugger
-        // set_modes_value(sel.modes,'input',sel.fil.dig)
+        set_modes_value(sel.modes,'input',sel.fil.name+"#"+sel.fil.dig)
 
         let {n_chunks} = get_timespace(sel)
         // a set of dublets stretching across it
@@ -169,10 +169,8 @@
             nublet.modes = clone_modes(sel.modes)
             // narrow in|out to this nublet
             sel_to_modes(nublet,nublet.modes)
-
             // this now describes a unique dublet
-            nublet.modes_json = sel.fil.name+" "
-                +sel.fil.dig+" "+JSON.stringify(nublet.modes)
+            nublet.modes_json = JSON.stringify(nublet.modes)
         })
         nublets.map(nublet => {
             console.log(`nublet ${nublet.in}: ${sel.fil.name}`)

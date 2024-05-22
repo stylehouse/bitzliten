@@ -67,7 +67,13 @@ class Cuelet {
         this.playlet = playlet
         // find playable
         let dublet = playlet.ideal_dub || playlet.vague_dub
-        this.objectURL = dublet?.objectURL
+        if (!dublet) return
+        if (this.objectURL != dublet.objectURL) {
+            delete this.buffer
+            delete this.moodbar
+            if (this.buffer) debugger
+        }
+        this.objectURL = dublet.objectURL
         // < this is now ancient:
         //  < doing this already (we ) stops the first player playing. wtf
         // else if (playlet.objectURL) {
