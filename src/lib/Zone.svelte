@@ -197,6 +197,7 @@
             //  for Player to prefer an out-moded bitrate over dead air
             let vague = dublets.find(
                 dublet => dublet.in == nublet.in && dublet.out == nublet.out
+                    && dublet.sel.fil == nublet.sel.fil
             )
             if (vague) {
                 nublet.vague_dub = vague
@@ -332,8 +333,6 @@
         // < multi-track sanity
         selections = []
         files = []
-        // < switching to a new track sanity
-        dublets = []
         for (let file of given) {
             new_fil({file})
         }
