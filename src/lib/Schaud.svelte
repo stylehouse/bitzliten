@@ -10,7 +10,6 @@
     let {
         needle_uplink,
         sel,
-        on_reselection,
         // snippets
         leftend,rightend,
     } = $props()
@@ -241,7 +240,11 @@
 {/key}
         <span>
             {@render rightend(ends[1],width_per_s)}
+
         </span>
+        <div> 
+            IN|OUT:{sel.in}|{sel.out}
+        </div>
         
     <!-- 
              -->

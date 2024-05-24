@@ -3,7 +3,7 @@
     import KnobTime from "./ui/KnobTime.svelte";
     import { Sele } from "./cuelet_precursor.svelte";
 
-    let {sel,needle_uplink,on_reselection,chunk_length,duration} = $props()
+    let {sel,needle_uplink,duration} = $props()
 
     // of the whole File
     type tracktime = number
@@ -24,22 +24,11 @@
     // })
     // shunt upwards when time needs expanding
     $effect(() => {
-        // inclusively select dublet spaces
-        let fel = {
-            in: Math.floor(in_time / chunk_length) * chunk_length,
-            out: Math.ceil(out_time / chunk_length) * chunk_length,
-        }
-        if (fel.in != sel.in || fel.out != sel.out) {
-            // non-reactively set it here
-            sel.set(fel)
-            console.log("Selection Woke",sel)
-            // then cause a reaction
-            // < only needed when adjusting sel.out, wtf?
-            on_reselection()
-        }
-        else {
-            // console.log("Selection zzzz",sel)
-        }
+        sel.on_adjust({in:in_time,out:out_time})
+    })
+    $effect(() => {
+        let etc = sel.in +'-'+ sel.out
+        console.log("Sele: "+etc)
     })
     // pull to Knobs
     let selin = $state(in_time)
@@ -71,7 +60,7 @@
         selmo_was = 0
     }
 
-    let min_loop_duration:looptime = 4
+    let min_loop_duration:looptime = sel.enc.chunk_length*2
     function range_sanity() {
         // in before start
         if (selin < 0) {
@@ -104,7 +93,7 @@
 
 <div> Selection:{sel.id}
     {#if sel.playlets.length}
-        <Schaud {needle_uplink} {sel} {on_reselection}>
+        <Schaud {needle_uplink} {sel} >
             {#snippet leftend(cueletsin:tracktime, width_per_s)}
                 <span>
                     <dof style="margin-top:15em;">

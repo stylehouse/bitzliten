@@ -7,7 +7,7 @@
     // per selection
     //  contains Schaud.svelte, using the audio api
     import Selection from "./Selection.svelte";
-    import { Fili, Sele,create_unfulfilled_dublets } from "./cuelet_precursor.svelte";
+    import { Fili, Sele } from "./cuelet_precursor.svelte";
     import File from "./File.svelte";
     // 2s chunks
     // lots of them together, buffering
@@ -41,8 +41,24 @@
         }
     });
 
-
-    // these reset per file:
+    // size in seconds to encode at a time (a dublet)
+    //  which sel.in|out are always a multiple of
+    let chunk_length = 2
+    // Knobs elsewhere, eg Selection
+    function on_reselection() {
+        console.log("on_reselection()")
+            setTimeout(() => letsgo(),1)
+    }
+    // < encoder instances
+    let enc = {
+        on_reselection,
+        chunk_length,
+        // cache of encoded chunks, any file|time|mode
+        dublets:[]
+    }
+    $effect(() => {
+        enc.modes = modes
+    })
 
     // info about the file
     let files = $state([])
@@ -57,7 +73,9 @@
     let selection_PK = 0
     let new_sel = (c={}) => {
         // usually are created once a c={fil} is ready (with .data)
-        let sel = new Sele({id:selection_PK++,...c})
+        let sel = new Sele({id:selection_PK++,
+            enc,
+            ...c})
         selections.push(sel)
         // allow /$sel to be added to in Selection.svelte
         // < better than this - seems a messy hack - but worked for needles/Pointer
@@ -70,14 +88,7 @@
     let fil_onload = (fil) => {
         let sel = new_sel({fil})
     }
-    // size in seconds to encode at a time (a dublet)
-    //  which sel.in|out are always a multiple of
-    let chunk_length = 2
-    // chunks, any time, any modes
-    let dublets:Array<adublet> = $state([])
-    // chunks to look up and play (~~ playlist)
-    //  decided in letsgo()
-    let playlets:Array<adublet> = $state([])
+
     
     
 
@@ -127,20 +138,15 @@
     function config_maybe_changed() {
         letsgo()
     }
-    // Knobs elsewhere, eg Selection
-    function on_reselection() {
-        console.log("on_reselection()")
-            setTimeout(() => letsgo(),1)
-    }
 
     function letsgo() {
         if (selections[0] == null) return
-        playlets = []
+        let playlets = []
         // < support more than one?
         selections.map(sel => {
             if (sel.in == null) return
             // make view of what to play
-            sel.playlets = make_playlets(sel)
+            sel.playlets = sel.make_playlets()
             playlets.push(...sel.playlets)
         })
         // find gapos
@@ -151,97 +157,6 @@
     }
     
     
-    // generate a bunch of tiles for your ears to walk on
-    function make_playlets(sel:Sele):adublet[] {
-        // how to encode (modes)
-        sel.modes = clone_modes()
-        // and attaches the Fili's identity
-        if (!sel.fil.dig) debugger
-        set_modes_value(sel.modes,'input',sel.fil.name+"#"+sel.fil.dig)
-
-        let {n_chunks} = get_timespace(sel)
-        // a set of dublets stretching across it
-        let nublets = create_unfulfilled_dublets(sel,n_chunks,chunk_length)
-        // ready it for being an ffmpeg job
-        //  ie include modes+modes_json, which includes its in|out points
-        nublets.map(nublet => {
-            // copy how to do things
-            nublet.modes = clone_modes(sel.modes)
-            // narrow in|out to this nublet
-            sel_to_modes(nublet,nublet.modes)
-            // this now describes a unique dublet
-            nublet.modes_json = JSON.stringify(nublet.modes)
-        })
-        nublets.map(nublet => {
-            console.log(`nublet ${nublet.in}: ${sel.fil.name}`)
-        })
-        // link to candidate dublets
-        nublets.map(nublet => find_dub(nublet))
-
-        // and we now call that
-        return nublets
-    }
-    // playlet // dublet
-    function find_dub(nublet) {
-        // try to match the whole of modes
-        let ideal = dublets.find(
-            dublet => dublet.modes_json == nublet.modes_json
-        )
-        if (ideal) {
-            nublet.ideal_dub = ideal
-        }
-        else {
-            // settle for any playable instance of that time
-            //  for Player to prefer an out-moded bitrate over dead air
-            let vague = dublets.find(
-                dublet => dublet.in == nublet.in && dublet.out == nublet.out
-                    && dublet.sel.fil == nublet.sel.fil
-            )
-            if (vague) {
-                nublet.vague_dub = vague
-            }
-        }
-    }
-    function get_timespace(sel) {
-        // we have a notch
-        let length = sel.out - sel.in
-        if (isNaN(length)) throw "NaN"
-        if (length < 0)
-            sel.out = sel.in + 4
-        // < wind down if sel.out is > file length
-
-        // < blog on this convention
-        let n_chunks = Math.ceil(length / chunk_length)
-        return {length,n_chunks}
-    }
-    function clone_modes(these) {
-        these ||= modes
-        // < why not?
-        // return modes.map(mode => Object.fromEntries(mode))
-        return these.map(mode => {
-            let ha = {...mode}
-            return ha
-        })
-    }
-    // sel -> modes
-    // called from letsgo(), so we have modes[]
-    type sel_basically = {in,out}
-    function sel_to_modes(sel:sel_basically,modes) {
-        set_modes_value(modes,'seek',sel.in)
-        let length = sel.out - sel.in
-        if (length <= 0) throw "!length"
-        set_modes_value(modes,'length',length)
-    }
-    function set_modes_value(modes,t,s) {
-        if (s == null) throw "huh"
-        let mode = find_t_in_N(modes,t)
-        mode.s = s
-    }
-    function find_t_in_N(N,t) {
-        let M = N.filter((m) => m.t == t)
-        if (M.length > 1) throw "many t"
-        return M[0]
-    }
 
     let latest_cmd = $state('')
     let fileinfo = {}
@@ -262,7 +177,7 @@
             fileinfo
         )
         joblet.objectURL = URL.createObjectURL(result)
-        dublets.push(joblet)
+        joblet.sel.enc.dublets.push(joblet)
         last_job_time = now() - job_start_ts
 
         // back to deciding whether to do anything
@@ -306,7 +221,7 @@
     let needle_complaints = 0
     needle_uplink.bad_playlet = (playlet) => {
         let dublet = playlet.ideal_dub || playlet.vague_dub
-        dublets = dublets.filter(dub => dub != dublet)
+        enc.dublets = enc.dublets.filter(dub => dub != dublet)
         if (!needle_complaints) {
             needle_complaints = 1
             setTimeout(() => {
@@ -347,22 +262,20 @@
 <main>
     {#key reboot}
     <p>{message} <button onclick={rebootup}>reboot</button></p>
-    <!-- svelte-ignore a11y_unknown_role -->
     <div
         ondrop={handleDrop}
         ondragover={handleDragOver}
         class="drop-zone"
-        role="dropzone"
-        aria-dropeffect="execute"
+        role="region"
+        aria-dropeffect="copy"
+        aria-roledescription="give a soundfile"
         style="border: 2px dashed #ccc; padding: 20px; text-align: center;"
     >
         {#each files as fil (fil.id)}
             <File {fil} onload={() => fil_onload(fil)} />
         {/each}
 
-        {#if playlets.length}
-            <!-- loaded: {JSON.stringify(fileinfo)} -->
-        {:else}
+        {#if !files.length}
             <p>
                 Drag and drop an audio file here
             </p>
