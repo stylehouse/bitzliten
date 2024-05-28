@@ -2,13 +2,14 @@
 import { untrack } from "svelte"
 import { fetch as ffetch,dec } from "./ff/FFgemp"
 import type { quadjustable, amode, amodes, adublet,acuelet } from "./ff/FFgemp"
+import type { Sele } from "./cuelet_precursor.svelte"
 
 // a [cuelet+] represents a sequence of chunks of the media we encoded
 class SyncableCueleter {
     // the ! stop ts error about not being defined in the
     //  constructor (which doesn't exist on this base class)
     public cuelets!:acuelet[]
-    public sel!:object
+    public sel!:Sele
     public needle_uplink!: null | object
     public audioContext!: null | object
 
@@ -335,6 +336,43 @@ export class ModusCueletSeq extends Modus {
     }
 }
 
+
+// for looping through cuelets in sequence
+export class ModusOriginale extends Modus {
+    // the most present bit of sound
+    public zip:Ziplet
+    public buffer
+
+    constructor() {
+        super()
+    }
+    async init() {
+        // this is the other Modus
+        // < or doing a source|encoded oscillation
+
+        // and decode the source file
+        let fil = this.orch.sel.fil
+        this.buffer = await this.orch.audioContext.decodeAudioData(fil.data.slice().buffer)
+
+    }
+    edge_moved = ({which}) => {
+        // < it plays the input file while knob twiddling
+        let sel = this.orch.sel
+        console.log(`ModusOriginale EDGEMOVE ${which} = ${sel[which]}`)
+        
+    }
+
+
+    attend({def,c}) {
+        console.log("ModusOriginale")
+    }
+}
+
+
+
+
+
+
 // < should be part of sel
 let fadetime = 1.5
 // some sound to play
@@ -401,6 +439,7 @@ class Ziplet extends NeedleableZiplet {
         this.cuelet = cuelet
         this.source = this.orch.audioContext.createBufferSource()
         this.source.buffer = this.cuelet.buffer
+        // this is accesses buffer.duration
         if (!this.duration) debugger
         this.source.connect(this.gain)
     }

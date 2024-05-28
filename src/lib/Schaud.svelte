@@ -2,10 +2,11 @@
     import { tweened } from 'svelte/motion';
 	import { fade,scale } from 'svelte/transition';
     import { dec } from "./ff/FFgemp"
-    import { Cueleter, ModusCueletSeq } from "./cuelets.svelte"
+    import { Cueleter, ModusCueletSeq, ModusOriginale } from "./cuelets.svelte"
     import type { quadjustable, amode, amodes, adublet,acuelet } from "./ff/FFgemp"
     import Pointer from './ui/Pointer.svelte';
     import { onDestroy, untrack } from 'svelte';
+    import { Sele } from './cuelet_precursor.svelte';
 
     let {
         needle_uplink,
@@ -13,7 +14,7 @@
         // snippets
         leftend,rightend,
     } = $props()
-
+    let ready = $state(0)
     // figures approach,
     let cuelets = $state([])
     let orch:Cueleter
@@ -34,6 +35,15 @@
     let modus = $state([])
     // our default thing to do
     modus[0] = new ModusCueletSeq()
+    // respond to editing
+    let ori = modus[1] = new ModusOriginale()
+    $effect(() => {
+        // sel?.in, ready && ori.edge_moved({which:'in'})
+    })
+    $effect(() => {
+        // sel?.out, ready && ori.edge_moved({which:'out'})
+    })
+    
     
     function newSpasm() {
         let con = orch.spasm_control = {}
@@ -44,7 +54,6 @@
 
 
 // our loop
-    let ready = $state(0)
     $effect(() => {
         if (cuelets[0]?.buffer) ready = 1
     })
