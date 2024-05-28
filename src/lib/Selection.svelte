@@ -17,18 +17,9 @@
     //  set into an object owned by Zone...
     let in_time:tracktime = $state(sel.in != null ? sel.in : 30)
     let out_time:tracktime = $state(sel.out != null ? sel.out : 36)
-    // < precise time should be somewhere, currently not needed?
-    // sel.set({
-    //     in_time,
-    //     out_time,
-    // })
     // shunt upwards when time needs expanding
     $effect(() => {
         sel.on_adjust({in:in_time,out:out_time})
-    })
-    $effect(() => {
-        let etc = sel.in +'-'+ sel.out
-        console.log("Sele: "+etc)
     })
     // pull to Knobs
     let selin = $state(in_time)

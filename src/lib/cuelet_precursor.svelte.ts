@@ -148,15 +148,9 @@ export class Sele {
     }
     get_timespace() {
         // we have a notch
-        let length = this.out - this.in
+        let length = this.out_inclusive - this.in_inclusive
         if (isNaN(length)) throw "NaN"
-        // < redundant?
-        if (length < 0)
-            this.out = this.in + 4
-        // < wind down if this.out is > file length
         let chunk_length = this.enc.chunk_length
-
-        // < blog on this convention
         let n_chunks = Math.ceil(length / chunk_length)
         return {length,n_chunks,chunk_length}
     }

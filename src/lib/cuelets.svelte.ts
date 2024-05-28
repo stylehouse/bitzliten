@@ -90,9 +90,10 @@ class Cuelet {
     //  to time, which starts at 0
     localise_time() {
         let sel = this.orch.sel
-        if (sel.in == null) throw "!sel.in"
-        this.intime = this.in - sel.in;
-        this.outtime = this.out - sel.in;
+        let begin = sel.in_inclusive
+        if (begin == null) throw "!sel.in"
+        this.intime = this.in - begin;
+        this.outtime = this.out - begin;
     }
     // convert objectURL to buffer
     // we can start playing cuelets before they all have
@@ -187,7 +188,9 @@ class SpasmableCueleter extends SyncableCueleter {
         def.comeback = () => {
             // defeats spasm_control because this callback must occur
             //  yet is serviced by this general "attend modus" function
-            this.spasm({modus,con:this.spasm_control,fed:def})
+            con = {}
+            this.spasm_control = con
+            this.spasm({modus,con,fed:def})
         }
 
         modus.map((mo:Modus) => {
@@ -259,6 +262,7 @@ export class ModusCueletSeq extends Modus {
     }
 
     attend({def,c}) {
+        console.log("ModusCueletSeq")
         if (!this.orch.cuelets[0]) debugger
 
         // c.go may be passed in|along
