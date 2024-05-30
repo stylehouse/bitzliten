@@ -38,10 +38,10 @@
     // respond to editing
     let ori = modus[1] = new ModusOriginale()
     $effect(() => {
-        // sel?.in, ready && ori.edge_moved({which:'in'})
+        sel?.in != null && ready && ori.edge_moved({which:'in'})
     })
     $effect(() => {
-        // sel?.out, ready && ori.edge_moved({which:'out'})
+        sel?.out != null && ready && ori.edge_moved({which:'out'})
     })
     
     

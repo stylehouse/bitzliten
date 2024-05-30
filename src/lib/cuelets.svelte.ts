@@ -2,7 +2,7 @@
 import { untrack } from "svelte"
 import { fetch as ffetch,dec } from "./ff/FFgemp"
 import type { quadjustable, amode, amodes, adublet,acuelet } from "./ff/FFgemp"
-import type { Sele } from "./cuelet_precursor.svelte"
+import type { Fili, Sele } from "./cuelet_precursor.svelte"
 
 // a [cuelet+] represents a sequence of chunks of the media we encoded
 class SyncableCueleter {
@@ -169,6 +169,7 @@ async function get_moodbar_webpdata_from_opusdata(arrayBuffer) {
 
 
 class SpasmableCueleter extends SyncableCueleter {
+    public modus
     public spasm_control!:null|object
     get time() {
         return this.audioContext.currentTime
@@ -177,6 +178,7 @@ class SpasmableCueleter extends SyncableCueleter {
     // now manage a slight queue of things to listen to
     // we attend this regularly
     spasm({modus,con,fed={}}): void {
+        this.modus = modus
         if (con != this.spasm_control) return
         fed ||= {}
         // they may will to come back at certain times
@@ -225,6 +227,8 @@ class Modus {
         // more constructor possible now with .orch
         this.init && this.init()
     }
+
+    
 }
 // for looping through cuelets in sequence
 export class ModusCueletSeq extends Modus {
@@ -241,8 +245,9 @@ export class ModusCueletSeq extends Modus {
         // export its progress info to be that of Schaud
         // we use this interface in Zone / prioritise_needs()
         this.orch.needle_uplink.stat = () => {
-            if (!this.cuenow?.buffer) return {}
             let zip = this.zip
+            // can happen before any attend()
+            if (!zip) return {}
             let duration = zip.duration
             if (duration == null) throw "!duration"
             if (zip.startTime == null) throw "!zip.startTime"
@@ -343,9 +348,12 @@ export class ModusCueletSeq extends Modus {
 
 // for looping through cuelets in sequence
 export class ModusOriginale extends Modus {
-    // the most present bit of sound
-    public zip:Ziplet
+    public fil:Fili
+    // < rename to decoded
     public buffer
+
+    // which peels off into lots of:
+    public zip:Ziplet
 
     constructor() {
         super()
@@ -354,16 +362,46 @@ export class ModusOriginale extends Modus {
         // this is the other Modus
         // < or doing a source|encoded oscillation
 
-        // and decode the source file
-        let fil = this.orch.sel.fil
-        this.buffer = await this.orch.audioContext.decodeAudioData(fil.data.slice().buffer)
+        // and decode the source file ~~ Cuelet.decodeAudio()
+        this.fil = this.orch.sel.fil
+        let buffer = this.fil.data.slice().buffer
+        this.buffer = await this.orch.audioContext.decodeAudioData(buffer)
 
     }
     edge_moved = ({which}) => {
         // < it plays the input file while knob twiddling
-        let sel = this.orch.sel
-        console.log(`ModusOriginale EDGEMOVE ${which} = ${sel[which]}`)
+        let sel = this.orch?.sel
+        if (!sel) return
+        // yet another in|out selection, from the start or before the end
+        let playFrom = sel[which]
+        let playFor = 0.15
+        if (which == 'out') playFrom -= playFor
+
+        console.log(`ModusOriginale EDGEMOVE ${which} = ${playFrom}`)
+        let was = this.zip
         
+        // this one time we play this sound
+        this.zip = new Ziplet({orch:this.orch, mo:this, fil:this.fil})
+        this.zip.start(playFrom,playFor)
+        let is = this.zip
+
+        let declack = 0.01
+        // replaces the old Zip
+        was && fadeout(was,declack)
+        fadein(is,declack)
+        // mutes the other Modus
+        let others = this.orch.modus.filter(mo => mo != this)
+        others.map(o => fadeout(o,declack))
+        // then after a while
+        let thence = playFor-declack
+        setTimeout(() => {
+            if (is != this.zip) return
+            fadeout(is,declack)
+            others.map(o => fadein(o,declack))
+            setTimeout(() => {
+                delete this.zip
+            },declack*1000)
+        },thence*1000)
     }
 
 
@@ -386,8 +424,10 @@ class NeedleableZiplet {
     // they exist, get adopted
     adopt_needle() {
         this.needle =
-        this.cuelet.needle =
             this.orch.needle_uplink.find_unused_needle()
+        if (this.cuelet) {
+            this.cuelet.needle = this.needle
+        }
     }
 }
 class Ziplet extends NeedleableZiplet {
@@ -402,6 +442,8 @@ class Ziplet extends NeedleableZiplet {
     public source
     // .buffer comes from
     public cuelet
+    //  or this:
+    public fil
 
     get duration():number {
         let dur = this.source?.buffer?.duration
@@ -423,42 +465,48 @@ class Ziplet extends NeedleableZiplet {
         return this.orch.time - this.startTime
     }
 
-    constructor({orch,mo,cuelet}) {
+    constructor({orch,mo,cuelet,fil}) {
         super()
         this.orch = orch
         this.mo = mo
         // each ziplet feeds into modus
         this.gain = this.orch.audioContext.createGain();
         this.gain.connect(this.mo.gain)
-        // < input could also be the source file itself?
-        cuelet && this.load_cuelet(cuelet)
+        if (cuelet) {
+            this.cuelet = cuelet
+            this.create_source(cuelet.buffer)
+        }
+        else if (fil) {
+            this.fil = fil
+            this.create_source(mo.buffer)
+
+        }
 
         // we are about to be played
         // we may fade over the rest of whatever is playing on our Modus
         if (mo.zip) this.fade_in_over_zip = mo.zip
     }
-    // cuelet brings the buffer, duration
-    // < and relativity to selection
-    load_cuelet(cuelet) {
-        this.cuelet = cuelet
+    create_source(buffer) {
         this.source = this.orch.audioContext.createBufferSource()
-        this.source.buffer = this.cuelet.buffer
+        this.source.buffer = buffer
         // this is accesses buffer.duration
         if (!this.duration) debugger
         this.source.connect(this.gain)
     }
-    start() {
+    start(playFrom,playFor) {
         let time = this.orch.time
         this.startTime = time
-        this.cuelet.startTime = time
-        this.source.start(time)
+        this.source.start(time,playFrom,playFor)
+        if (this.cuelet) {
+            this.cuelet.startTime = time
+            // tell animations
+            this.adopt_needle()
+            this.orch.needle_uplink.up_displaytime()
+            // replace trailing sounds of modus
+            let ozip = this.fade_in_over_zip
+            if (ozip) this.fade_in_over(ozip)
+        }
         
-        // tell animations
-        this.adopt_needle()
-        this.orch.needle_uplink.up_displaytime()
-        // replace trailing sounds of modus
-        let ozip = this.fade_in_over_zip
-        if (ozip) this.fade_in_over(ozip)
     }
     fade_in_over(ozip) {
         // crossfade from last
@@ -479,7 +527,8 @@ class Ziplet extends NeedleableZiplet {
     }
 }
 // these?
-function fade(zip:Ziplet,sudden_val:number,thence_val:number,fadetime:number) {
+type Gainable = Ziplet | Modus | Cueleter
+function fade(zip:Gainable,sudden_val:number,thence_val:number,fadetime:number) {
     let time = zip.orch.time
     zip.gain.gain.setValueAtTime(sudden_val, time);
     zip.gain.gain.linearRampToValueAtTime(thence_val, time + fadetime);
