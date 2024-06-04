@@ -298,10 +298,20 @@ export class ModusCueletSeq extends Modus {
         if (this.check_cuelet_buffer()) return
         // this one time we play this cuelet
         this.zip = new Ziplet({orch:this.orch, mo:this, cuelet:this.cuenow})
+        this.may_playFrom(c)
         // play
-        this.zip.start()
+        this.zip.start(c.playFrom)
 
         this.plan_crossfade({def,c})
+    }
+    may_playFrom(c) {
+        let sel = this.orch.sel
+        // if this is the first cuelet
+        if (this.cuenow != this.orch.cuelets[0]) return
+        // and sel.in is somewhere inside the first cuelet
+        if (sel.in == sel.in_inclusive) return
+        // seek there
+        c.playFrom = sel.in - sel.in_inclusive
     }
 
     plan_crossfade({def,c}) {
@@ -314,11 +324,17 @@ export class ModusCueletSeq extends Modus {
         // two ways to attend the end:
         // a bit early, to do a crossfade
         if (!continuity) {
-            // crossfading discontinuity, probably from looping
-            // the next thing might not be buffered yet!
-            let duration = zip.duration || 2000
+            // looping around
+            let duration = zip.duration || 2
+            let sel = this.orch.sel
+            let early_end = sel.out_inclusive - sel.out
+            duration -= early_end
             let left = duration - fadetime
-            // return console.log("Wanna comeback in "+left)
+            if (left < 0) {
+                // there is not enough time, shorten the fade
+                fadetime += left
+                left = 0
+            }
             
             // < can this become a persistent assertion?
             //    ie created every time
@@ -450,6 +466,7 @@ class Ziplet extends NeedleableZiplet {
         if (dur == null) throw "!duration"
         return dur
     }
+    // < factor this.playFrom|playFor into Zip.ends_at etc
     get ends_at() {
         if (this.startTime == null) throw "!startTime"
         return this.startTime + this.duration
@@ -497,6 +514,8 @@ class Ziplet extends NeedleableZiplet {
         let time = this.orch.time
         this.startTime = time
         this.source.start(time,playFrom,playFor)
+        if (playFrom) this.playFrom = playFrom
+        if (playFrom) this.playFor = playFor
         if (this.cuelet) {
             this.cuelet.startTime = time
             // tell animations
