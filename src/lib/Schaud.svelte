@@ -130,7 +130,7 @@
 
     let has_tween:null|acuelet = null
     function needle_moves() {
-        let {cuenow,cue_time,loop_time,zip} = needle_uplink.stat()
+        let {cuenow,cue_time,time_of,remains,loop_time,zip} = needle_uplink.stat()
         // occasionally generate bad data from ffmpeg, eg if seek > file length
         // if (!zip.source.buffer) return
         // do the rest once per cuenow
@@ -142,19 +142,20 @@
         if (!needle) throw '!needle'
 
         // we come here right after sound.start()
-        if (cue_time > 0.05) console.warn("long time to needle_moves: "+cue_time)
+        if (time_of > 0.05) console.warn("long time to needle_moves: "+time_of)
 
         let cueletswidth = cuenow.el.offsetWidth
-        let duration = zip.duration
-        let progress = cue_time / duration
+        let progress = cue_time              / zip.whole_duration
+        let completed = (cue_time + remains) / zip.whole_duration
         let some_left = progress * cueletswidth
         // fade in quickly, politely appear
         //  clobbered by a longer one for crossfades
-        needle.opacity.set(1,{duration:0.2*1000})
-        needle.left.set(cuenow.el.offsetLeft*1 + some_left)
-        needle.left.set(cuenow.el.offsetLeft*1 + cueletswidth*1,{duration:duration*1000})
+        needle.opacity.set(1,{duration:0.1*1000})
+        needle.left.set(cuenow.el.offsetLeft*1 + progress * cueletswidth)
+        needle.left.set(cuenow.el.offsetLeft*1 + completed * cueletswidth*1,{duration:remains*1000})
         needle.top.set(cuenow.el.offsetTop)
-        // console.log(`needle_moves: @ ${displaytime} \t${progress} of ${dec(duration)}\t`)
+
+        console.log(`needle_moves: @ ${cue_time} \t${progress}\t remains: ${dec(remains)}\t`)
         // here we can keep the needle at 0 to align new sprites
         //  ie where in the image of the pointer (hand) the point (fingertip) is
         // needle.left.set(0)

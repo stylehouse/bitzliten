@@ -251,11 +251,12 @@ export class ModusCueletSeq extends Modus {
             let duration = zip.duration
             if (duration == null) throw "!duration"
             if (zip.startTime == null) throw "!zip.startTime"
-            let cue_time = zip.time_of
+            let cue_time = zip.cue_time
+            let time_of = zip.time_of
             let remains = zip.time_left
             return {
                 cuenow:this.cuenow, zip:this.zip, mo:this,
-                remains, cue_time, duration, startTime:zip.startTime,
+                remains, cue_time, time_of, duration, startTime:zip.startTime,
                 loop_time: this.loop_time
             }
         }
@@ -276,6 +277,12 @@ export class ModusCueletSeq extends Modus {
             this.cuenow = this.orch.next_cuelet(this.cuenow)
             this.go_cuenow({def,c})
         }
+    }
+    get first_cuelet() {
+        return this.orch.cuelets[0]
+    }
+    get last_cuelet() {
+        return this.orch.cuelets.slice(-1)[0]
     }
 
     check_cuelet_buffer() {
@@ -298,20 +305,30 @@ export class ModusCueletSeq extends Modus {
         if (this.check_cuelet_buffer()) return
         // this one time we play this cuelet
         this.zip = new Ziplet({orch:this.orch, mo:this, cuelet:this.cuenow})
-        this.may_playFrom(c)
+        this.may_playFrom(this.zip)
+        this.may_playFor(this.zip)
         // play
-        this.zip.start(c.playFrom)
+        this.zip.start()
 
         this.plan_crossfade({def,c})
     }
-    may_playFrom(c) {
+    may_playFrom(zip) {
         let sel = this.orch.sel
         // if this is the first cuelet
-        if (this.cuenow != this.orch.cuelets[0]) return
+        if (this.cuenow != this.first_cuelet) return
         // and sel.in is somewhere inside the first cuelet
         if (sel.in == sel.in_inclusive) return
         // seek there
-        c.playFrom = sel.in - sel.in_inclusive
+        zip.playFrom = sel.in - sel.in_inclusive
+    }
+    may_playFor(zip) {
+        let sel = this.orch.sel
+        // if this is the last cuelet
+        if (this.cuenow != this.last_cuelet) return
+        if (sel.out == sel.out_inclusive) return
+        let early_end = sel.out_inclusive - sel.out
+        zip.playFor = zip.whole_duration
+            -(zip.playFrom||0) -early_end
     }
 
     plan_crossfade({def,c}) {
@@ -326,9 +343,6 @@ export class ModusCueletSeq extends Modus {
         if (!continuity) {
             // looping around
             let duration = zip.duration || 2
-            let sel = this.orch.sel
-            let early_end = sel.out_inclusive - sel.out
-            duration -= early_end
             let left = duration - fadetime
             if (left < 0) {
                 // there is not enough time, shorten the fade
@@ -398,7 +412,8 @@ export class ModusOriginale extends Modus {
         
         // this one time we play this sound
         this.zip = new Ziplet({orch:this.orch, mo:this, fil:this.fil})
-        this.zip.start(playFrom,playFor)
+        Object.assign(this.zip,{playFrom,playFor})
+        this.zip.start()
         let is = this.zip
 
         let declack = 0.01
@@ -446,12 +461,16 @@ class NeedleableZiplet {
         }
     }
 }
+
 class Ziplet extends NeedleableZiplet {
     public orch:Cueleter
     public mo:Modus
     // one we replace on mo
     public fade_in_over_zip:Ziplet
     public startTime
+
+    public playFrom:number|null
+    public playFor:number|null
 
     public gain
     // the Web Audio object
@@ -461,9 +480,23 @@ class Ziplet extends NeedleableZiplet {
     //  or this:
     public fil
 
-    get duration():number {
+    // whole set of cuelets
+    get whole_duration():number {
         let dur = this.source?.buffer?.duration
         if (dur == null) throw "!duration"
+        return dur
+    }
+    // selection trims
+    get duration():number {
+        if (this.playFor) {
+            // this is the duration when trimming the end
+            //  it already knows about any playFrom
+            return this.playFor
+        }
+        let dur = this.whole_duration
+        if (this.playFrom) {
+            dur -= this.playFrom
+        }
         return dur
     }
     // < factor this.playFrom|playFor into Zip.ends_at etc
@@ -472,12 +505,15 @@ class Ziplet extends NeedleableZiplet {
         return this.startTime + this.duration
     }
     get time_left() {
-        let time = this.orch.time
         let left = this.ends_at - this.orch.time
         if (left < 0) left = 0
         return left
     }
-    // aka cue_time, how long it has been playing
+    // relative to whole cuelet
+    get cue_time() {
+        return this.time_of + (this.playFrom||0)
+    }
+    // how long it has been playing
     get time_of() {
         return this.orch.time - this.startTime
     }
@@ -510,12 +546,10 @@ class Ziplet extends NeedleableZiplet {
         if (!this.duration) debugger
         this.source.connect(this.gain)
     }
-    start(playFrom,playFor) {
+    start() {
         let time = this.orch.time
         this.startTime = time
-        this.source.start(time,playFrom,playFor)
-        if (playFrom) this.playFrom = playFrom
-        if (playFrom) this.playFor = playFor
+        this.source.start(time,this.playFrom||0,this.playFor)
         if (this.cuelet) {
             this.cuelet.startTime = time
             // tell animations
@@ -532,8 +566,7 @@ class Ziplet extends NeedleableZiplet {
         // supposing the fadetime is built in to their current overlap
         let left = ozip.time_left
         if (left > this.duration+0.001) {
-            // going to get weird
-            debugger
+            left = this.duration
         }
         if (left == 0) return
         fadein(this,left)
