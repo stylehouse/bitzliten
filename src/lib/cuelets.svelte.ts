@@ -1,6 +1,6 @@
 
 import { untrack } from "svelte"
-import { fetch as ffetch,dec } from "./ff/FFgemp"
+import { fetch as ffetch,dec, now } from "./ff/FFgemp"
 import type { quadjustable, amode, amodes, adublet,acuelet } from "./ff/FFgemp"
 import type { Fili, Sele } from "./cuelet_precursor.svelte"
 
@@ -375,7 +375,7 @@ export class ModusCueletSeq extends Modus {
     }
 }
 
-
+type unixtime = number
 // for looping through cuelets in sequence
 export class ModusOriginale extends Modus {
     public fil:Fili
@@ -399,6 +399,8 @@ export class ModusOriginale extends Modus {
 
     }
     edge_moved = ({which}) => {
+        if (this.edge_moved_recently()) return
+
         // < it plays the input file while knob twiddling
         let sel = this.orch?.sel
         if (!sel) return
@@ -407,7 +409,7 @@ export class ModusOriginale extends Modus {
         let playFor = 0.15
         if (which == 'out') playFrom -= playFor
 
-        console.log(`ModusOriginale EDGEMOVE ${which} = ${playFrom}`)
+        console.log(`ModusOriginale EDGEMOVE ${which} = ${playFrom}\t\t${now()}`)
         let was = this.zip
         
         // this one time we play this sound
@@ -433,6 +435,14 @@ export class ModusOriginale extends Modus {
                 delete this.zip
             },declack*1000)
         },thence*1000)
+    }
+    // debounce eventing for in and out when sel moved
+    public last_edge_moved_ts:unixtime
+    edge_moved_recently() {
+        let was = this.last_edge_moved_ts
+        this.last_edge_moved_ts = now()
+        let delta = this.last_edge_moved_ts - was
+        if (delta < 0.006) return 1
     }
 
 
