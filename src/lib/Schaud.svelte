@@ -137,7 +137,7 @@
         if (has_tween == cuenow) return
         has_tween = cuenow
         // 1-2 needles exist
-        let needle = zip.needle
+        let needle = cuenow.needle
         // if (!needle) return
         if (!needle) throw '!needle'
 

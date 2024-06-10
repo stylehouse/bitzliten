@@ -309,6 +309,13 @@ export class ModusCueletSeq extends Modus {
         this.may_playFor(this.zip)
         // play
         this.zip.start()
+        this.cuenow.startTime = this.zip.startTime
+        // tell animations
+        //  zip.needle needed only to crossfade two zips of same Modus (Zip.fade_in_over)
+        this.cuenow.needle = 
+        this.zip.needle =
+            this.orch.needle_uplink.find_unused_needle()
+        this.orch.needle_uplink.up_displaytime()
 
         this.plan_crossfade({def,c})
     }
@@ -458,21 +465,7 @@ export class ModusOriginale extends Modus {
 
 // < should be part of sel
 let fadetime = 1.5
-// some sound to play
-class NeedleableZiplet {
-    // progress indicator interface
-    public needle
-    // they exist, get adopted
-    adopt_needle() {
-        this.needle =
-            this.orch.needle_uplink.find_unused_needle()
-        if (this.cuelet) {
-            this.cuelet.needle = this.needle
-        }
-    }
-}
-
-class Ziplet extends NeedleableZiplet {
+class TimeableZiplet {
     public orch:Cueleter
     public mo:Modus
     // one we replace on mo
@@ -509,7 +502,6 @@ class Ziplet extends NeedleableZiplet {
         }
         return dur
     }
-    // < factor this.playFrom|playFor into Zip.ends_at etc
     get ends_at() {
         if (this.startTime == null) throw "!startTime"
         return this.startTime + this.duration
@@ -527,7 +519,9 @@ class Ziplet extends NeedleableZiplet {
     get time_of() {
         return this.orch.time - this.startTime
     }
-
+}
+// some sound to play
+class Ziplet extends TimeableZiplet {
     constructor({orch,mo,cuelet,fil}) {
         super()
         this.orch = orch
@@ -560,18 +554,12 @@ class Ziplet extends NeedleableZiplet {
         let time = this.orch.time
         this.startTime = time
         this.source.start(time,this.playFrom||0,this.playFor)
-        if (this.cuelet) {
-            this.cuelet.startTime = time
-            // tell animations
-            this.adopt_needle()
-            this.orch.needle_uplink.up_displaytime()
-            // replace trailing sounds of modus
-            let ozip = this.fade_in_over_zip
-            if (ozip) this.fade_in_over(ozip)
-        }
+        // replace trailing sounds of modus
+        let ozip = this.fade_in_over_zip
+        if (ozip) this.fade_in_over(ozip)
         
     }
-    fade_in_over(ozip) {
+    fade_in_over(ozip:Ziplet) {
         // crossfade from last
         // supposing the fadetime is built in to their current overlap
         let left = ozip.time_left
