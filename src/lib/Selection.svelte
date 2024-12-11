@@ -34,7 +34,6 @@
 
         in_time = selin
         out_time = selout
-        // console.log("inout_time <- ")
     })
     function add_selmo() {
         // difference from last tiny adjustment

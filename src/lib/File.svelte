@@ -1,6 +1,6 @@
 <script lang=ts>
     import { Fili, Sele } from "./cuelet_precursor.svelte";
-    let {fil,onload} = $props()
+    let {fil,onload}:{fil:Fili,onload:Function} = $props()
 
     $effect(() => {
         // class Fili does stuff

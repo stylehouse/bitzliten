@@ -268,7 +268,7 @@ export class ModusCueletSeq extends Modus {
     }
 
     attend({def,c}) {
-        console.log("ModusCueletSeq")
+        // console.log("ModusCueletSeq")
         if (!this.orch.cuelets[0]) debugger
 
         // c.go may be passed in|along
@@ -454,7 +454,7 @@ export class ModusOriginale extends Modus {
 
 
     attend({def,c}) {
-        console.log("ModusOriginale")
+        // console.log("ModusOriginale")
     }
 }
 

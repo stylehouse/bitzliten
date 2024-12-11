@@ -5,6 +5,7 @@
 </script>
 <div>
     <Zone />
+    <a href='/loop'>Loop</a>
 </div>
 <style>
 	:global(body) {
